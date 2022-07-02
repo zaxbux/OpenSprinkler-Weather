@@ -75,4 +75,4 @@ export interface ZimmermanWateringData extends BaseWateringData {
 }
 
 export type WeatherProviderId = "OWM" | "local" | "mock" | "WUnderground";
-export type WeatherProviderShortId = "OWM" | "DS" | "local" | "mock" | "WU";
+export type WeatherProviderShortId = "OWM" | "local" | "mock" | "WU";
