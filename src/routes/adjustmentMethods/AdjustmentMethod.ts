@@ -1,5 +1,5 @@
-import { BaseWateringData, GeoCoordinates, PWS } from "../../types";
-import { WeatherProvider } from "../weatherProviders/WeatherProvider";
+import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
+import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
 
 
 export interface AdjustmentMethod {

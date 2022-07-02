@@ -1,5 +1,5 @@
-import { GeoCoordinates } from "../../types";
-import { CodedError, ErrorCode } from "../../errors";
+import { GeoCoordinates } from "@/types";
+import { CodedError, ErrorCode } from "@/errors";
 import { httpJSONRequest } from "../weather";
 import { Geocoder } from "./Geocoder";
 

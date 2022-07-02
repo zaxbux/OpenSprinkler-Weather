@@ -3,7 +3,7 @@
  */
 import * as express from "express";
 import * as fs from "fs";
-import { GeoCoordinates } from "../types";
+import { GeoCoordinates } from "@/types";
 import { getParameter, resolveCoordinates } from "./weather";
 
 const DATA_FILE = __dirname + "/../../baselineEToData/Baseline_ETo_Data.bin";

@@ -1,7 +1,7 @@
-import { GeoCoordinates, PWS, WeatherData, ZimmermanWateringData } from "../../types";
+import { GeoCoordinates, PWS, ZimmermanWateringData } from "@/types";
 import { WeatherProvider } from "./WeatherProvider";
-import { httpJSONRequest } from "../weather";
-import { CodedError, ErrorCode } from "../../errors";
+import { httpJSONRequest } from "@/routes/weather";
+import { CodedError, ErrorCode } from "@/errors";
 
 export default class WUnderground extends WeatherProvider {
 

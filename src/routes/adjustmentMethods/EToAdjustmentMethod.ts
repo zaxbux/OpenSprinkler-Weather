@@ -1,9 +1,9 @@
 import * as SunCalc from "suncalc";
 import * as moment from "moment";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
-import { BaseWateringData, GeoCoordinates, PWS } from "../../types";
-import { WeatherProvider } from "../weatherProviders/WeatherProvider";
-import { CodedError, ErrorCode } from "../../errors";
+import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
+import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
+import { CodedError, ErrorCode } from "@/errors";
 
 
 /**

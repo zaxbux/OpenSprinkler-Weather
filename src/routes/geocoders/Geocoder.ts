@@ -1,7 +1,5 @@
-import fs = require("fs");
-
-import { GeoCoordinates } from "../../types";
-import { CodedError, ErrorCode } from "../../errors";
+import { GeoCoordinates } from "@/types";
+import { CodedError, ErrorCode } from "@/errors";
 
 export abstract class Geocoder {
 

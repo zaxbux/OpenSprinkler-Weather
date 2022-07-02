@@ -1,6 +1,6 @@
-import { GeoCoordinates, PWS, WeatherData, ZimmermanWateringData } from "../../types";
-import { EToData } from "../adjustmentMethods/EToAdjustmentMethod";
-import { CodedError, ErrorCode } from "../../errors";
+import { GeoCoordinates, PWS, WeatherData, ZimmermanWateringData } from "@/types";
+import { EToData } from "@/routes/adjustmentMethods/EToAdjustmentMethod";
+import { CodedError, ErrorCode } from "@/errors";
 
 export class WeatherProvider {
 	/**

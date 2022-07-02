@@ -2,10 +2,10 @@ import * as express	from "express";
 import * as moment from "moment";
 import * as fs from "fs";
 
-import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "../../types";
+import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "@/types";
 import { WeatherProvider } from "./WeatherProvider";
-import { EToData } from "../adjustmentMethods/EToAdjustmentMethod";
-import { CodedError, ErrorCode } from "../../errors";
+import { EToData } from "@/routes/adjustmentMethods/EToAdjustmentMethod";
+import { CodedError, ErrorCode } from "@/errors";
 
 var queue: Array<Observation> = [],
 	lastRainEpoch = 0,

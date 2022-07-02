@@ -4,9 +4,9 @@ dotenv_config();
 import * as express from "express";
 import * as cors from "cors";
 
-import * as weather from "./routes/weather";
-import * as local from "./routes/weatherProviders/local";
-import * as baselineETo from "./routes/baselineETo";
+import * as weather from "@/routes/weather";
+import * as local from "@/routes/weatherProviders/local";
+import * as baselineETo from "@/routes/baselineETo";
 
 let	host	= process.env.HOST || "127.0.0.1",
 	port	= parseInt( process.env.PORT ) || 3000;

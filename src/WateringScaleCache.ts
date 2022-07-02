@@ -1,6 +1,6 @@
 import * as NodeCache from "node-cache";
-import { GeoCoordinates, PWS } from "./types";
-import { AdjustmentOptions } from "./routes/adjustmentMethods/AdjustmentMethod";
+import { GeoCoordinates, PWS } from "@/types";
+import { AdjustmentOptions } from "@/routes/adjustmentMethods/AdjustmentMethod";
 import * as moment from "moment-timezone";
 import * as geoTZ from "geo-tz";
 import { Moment } from "moment-timezone/moment-timezone";

@@ -1,10 +1,10 @@
 import * as moment from "moment";
 import { expect } from "chai";
-import { GeoCoordinates } from "../../types";
+import { GeoCoordinates } from "@/types";
 import { calculateETo, EToData } from "./EToAdjustmentMethod";
 
 
-const testData: TestData[] = require( "../../test/etoTest.json" );
+const testData: TestData[] = require( "@/test/etoTest.json" );
 
 describe( "ETo AdjustmentMethod", () => {
 	describe( "Should correctly calculate ETo", async () => {

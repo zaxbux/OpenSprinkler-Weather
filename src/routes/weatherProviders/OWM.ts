@@ -1,9 +1,9 @@
-import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "../../types";
-import { httpJSONRequest } from "../weather";
+import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "@/types";
+import { httpJSONRequest } from "@/routes/weather";
 import { WeatherProvider } from "./WeatherProvider";
-import { approximateSolarRadiation, CloudCoverInfo, EToData } from "../adjustmentMethods/EToAdjustmentMethod";
+import { approximateSolarRadiation, CloudCoverInfo, EToData } from "@/routes/adjustmentMethods/EToAdjustmentMethod";
 import * as moment from "moment";
-import { CodedError, ErrorCode } from "../../errors";
+import { CodedError, ErrorCode } from "@/errors";
 
 export default class OWMWeatherProvider extends WeatherProvider {
 
@@ -190,10 +190,10 @@ export default class OWMWeatherProvider extends WeatherProvider {
 	}
 
 	// Expects an array of at least 3 hours of forecast data from the API's onecall method
-	// Returns an aggregated object for the first 3 hours of the hourly array, should be equivalent to the 
+	// Returns an aggregated object for the first 3 hours of the hourly array, should be equivalent to the
 	// 3 hour object from the 5 day forecast
 	getPeriod3hObject(hourly: any[]) {
-		
+
 		let period3h = {
 			dt: 0,
 			main: {
@@ -239,7 +239,7 @@ export default class OWMWeatherProvider extends WeatherProvider {
 			// Some of the fields aren't availible in the new call so not worth trying to do a full translation
 			for (let index = 0; index < 3; index++) {
 				let hour = hourly[index];
-				
+
 				period3h.main.temp += hour.temp;
 				period3h.main.temp_min = period3h.main.temp_min > hour.temp || index == 0 ? hour.temp : period3h.main.temp_min;
 				period3h.main.temp_max = period3h.main.temp_max < hour.temp || index == 0 ? hour.temp : period3h.main.temp_max;

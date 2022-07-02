@@ -5,7 +5,7 @@ import * as SunCalc from "suncalc";
 import * as moment from "moment-timezone";
 import * as geoTZ from "geo-tz";
 
-import { BaseWateringData, GeoCoordinates, PWS, TimeData, WeatherData } from "../types";
+import { BaseWateringData, GeoCoordinates, PWS, TimeData, WeatherData } from "@/types";
 import { WeatherProvider } from "./weatherProviders/WeatherProvider";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./adjustmentMethods/AdjustmentMethod";
 import WateringScaleCache, { CachedScale } from "../WateringScaleCache";
@@ -13,7 +13,7 @@ import ManualAdjustmentMethod from "./adjustmentMethods/ManualAdjustmentMethod";
 import ZimmermanAdjustmentMethod from "./adjustmentMethods/ZimmermanAdjustmentMethod";
 import RainDelayAdjustmentMethod from "./adjustmentMethods/RainDelayAdjustmentMethod";
 import EToAdjustmentMethod from "./adjustmentMethods/EToAdjustmentMethod";
-import { CodedError, ErrorCode, makeCodedError } from "../errors";
+import { CodedError, ErrorCode, makeCodedError } from "@/errors";
 import { Geocoder } from "./geocoders/Geocoder";
 
 const WEATHER_PROVIDER: WeatherProvider = new ( require("./weatherProviders/" + ( process.env.WEATHER_PROVIDER || "OWM" ) ).default )();

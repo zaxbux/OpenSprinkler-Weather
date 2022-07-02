@@ -1,6 +1,6 @@
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
-import { GeoCoordinates, PWS, ZimmermanWateringData } from "../../types";
-import { WeatherProvider } from "../weatherProviders/WeatherProvider";
+import { GeoCoordinates, PWS, ZimmermanWateringData } from "@/types";
+import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
 
 
 /**
