@@ -38,8 +38,8 @@ export abstract class Geocoder {
 	 */
 	public async getLocation( location: string ): Promise<GeoCoordinates> {
 		if ( this.cache.has( location ) ) {
-			const coords: GeoCoordinates = this.cache.get( location );
-			if ( coords == null ) {
+			const coords = this.cache.get( location );
+			if ( !coords ) {
 				// Throw an error if there are no results for this location.
 				throw new CodedError( ErrorCode.NoLocationFound );
 			} else {
@@ -52,7 +52,7 @@ export abstract class Geocoder {
 			this.cache.set( location, coords );
 			return coords;
 		} catch ( ex ) {
-			if ( ex instanceof CodedError && ex.errCode == ErrorCode.NoLocationFound ) {
+			if ( ex instanceof CodedError && ex.errCode === ErrorCode.NoLocationFound ) {
 				// Store in the cache the fact that this location has no results.
 				this.cache.set( location, null );
 			}

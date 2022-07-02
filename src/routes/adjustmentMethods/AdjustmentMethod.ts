@@ -35,7 +35,7 @@ export interface AdjustmentMethodResponse {
 	 * each field should be formatted in a way that the controller understands and numbers should be rounded
 	 * appropriately to remove excessive figures. If no data was used (e.g. an error occurred), this should be undefined.
 	 */
-	rawData?: object;
+	rawData?: Record<string, any>;
 	/**
 	 * How long watering should be delayed for (in hours) due to rain, or undefined if watering should not be delayed
 	 * for a specific amount of time (either it should be delayed indefinitely or it should not be delayed at all). This
@@ -44,7 +44,7 @@ export interface AdjustmentMethodResponse {
 	 */
 	rainDelay?: number;
 	/** The data that was used to calculate the watering scale, or undefined if no data was used. */
-	wateringData: BaseWateringData;
+	wateringData: BaseWateringData | undefined;
 }
 
 export interface AdjustmentOptions {

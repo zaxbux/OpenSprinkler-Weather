@@ -1,5 +1,5 @@
-import * as SunCalc from "suncalc";
-import * as moment from "moment";
+import SunCalc from "suncalc";
+import moment from "moment";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
 import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
 import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
@@ -38,13 +38,13 @@ async function calculateEToWateringScale(
 	// Default elevation is based on data from https://www.pnas.org/content/95/24/14009.
 	let elevation = 600;
 
-	if ( adjustmentOptions && "baseETo" in adjustmentOptions ) {
+	if ( adjustmentOptions && "baseETo" in adjustmentOptions && adjustmentOptions.baseETo ) {
 		baseETo = adjustmentOptions.baseETo
 	} else {
 		throw new CodedError( ErrorCode.MissingAdjustmentOption );
 	}
 
-	if ( adjustmentOptions && "elevation" in adjustmentOptions ) {
+	if ( adjustmentOptions && "elevation" in adjustmentOptions && adjustmentOptions.elevation ) {
 		elevation = adjustmentOptions.elevation;
 	}
 
@@ -165,9 +165,9 @@ SunCalc.addTime( Math.asin( 30 / 990 ) * 180 / Math.PI, "radiationStart", "radia
  * @return The total solar radiation for the day (in kilowatt hours per square meter per day).
  */
 export function approximateSolarRadiation(cloudCoverInfo: CloudCoverInfo[], coordinates: GeoCoordinates ): number {
-	return cloudCoverInfo.reduce( ( total, window: CloudCoverInfo ) => {
-		const radiationStart: moment.Moment = moment( SunCalc.getTimes( window.endTime.toDate(), coordinates[ 0 ], coordinates[ 1 ])[ "radiationStart" ] );
-		const radiationEnd: moment.Moment = moment( SunCalc.getTimes( window.startTime.toDate(), coordinates[ 0 ], coordinates[ 1 ])[ "radiationEnd" ] );
+	return cloudCoverInfo.reduce( ( total, window ) => {
+		const radiationStart: moment.Moment = moment( SunCalc.getTimes( window.endTime.toDate(), coordinates[ 0 ], coordinates[ 1 ]).sunrise );
+		const radiationEnd: moment.Moment = moment( SunCalc.getTimes( window.startTime.toDate(), coordinates[ 0 ], coordinates[ 1 ]).sunsetStart );
 
 		// Clamp the start and end times of the window within time when the sun was emitting significant radiation.
 		const startTime: moment.Moment = radiationStart.isAfter( window.startTime ) ? radiationStart : window.startTime;

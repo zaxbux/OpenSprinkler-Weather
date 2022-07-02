@@ -1,20 +1,15 @@
-import * as express from "express";
-import * as http from "http";
-import * as https from "https";
-import * as SunCalc from "suncalc";
-import * as moment from "moment-timezone";
-import * as geoTZ from "geo-tz";
+import SunCalc from "suncalc";
+import moment from "moment-timezone";
 
 import { BaseWateringData, GeoCoordinates, PWS, TimeData, WeatherData } from "@/types";
 import { WeatherProvider } from "./weatherProviders/WeatherProvider";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./adjustmentMethods/AdjustmentMethod";
 import WateringScaleCache, { CachedScale } from "../WateringScaleCache";
-import ManualAdjustmentMethod from "./adjustmentMethods/ManualAdjustmentMethod";
-import ZimmermanAdjustmentMethod from "./adjustmentMethods/ZimmermanAdjustmentMethod";
-import RainDelayAdjustmentMethod from "./adjustmentMethods/RainDelayAdjustmentMethod";
-import EToAdjustmentMethod from "./adjustmentMethods/EToAdjustmentMethod";
+import AdjustmentMethods from '@/routes/adjustmentMethods'
 import { CodedError, ErrorCode, makeCodedError } from "@/errors";
 import { Geocoder } from "./geocoders/Geocoder";
+import type { Request as IRequest } from 'itty-router';
+import { GoogleMapsTimeZoneLookup } from '@/timeZoneLookup/GoogleMaps';
 
 const WEATHER_PROVIDER: WeatherProvider = new ( require("./weatherProviders/" + ( process.env.WEATHER_PROVIDER || "OWM" ) ).default )();
 const PWS_WEATHER_PROVIDER: WeatherProvider = new ( require("./weatherProviders/" + ( process.env.PWS_WEATHER_PROVIDER || "WUnderground" ) ).default )();
@@ -24,20 +19,24 @@ const GEOCODER: Geocoder = new ( require("./geocoders/" + ( process.env.GEOCODER
 const filters = {
 	gps: /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
 	pws: /^(?:pws|icao|zmw):/,
-	url: /^https?:\/\/([\w\.-]+)(:\d+)?(\/.*)?$/,
+	//url: /^https?:\/\/([\w\.-]+)(:\d+)?(\/.*)?$/,
 	time: /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-])(\d{2})(\d{2})/,
 	timezone: /^()()()()()()([+-])(\d{2})(\d{2})/
 };
 
 /** AdjustmentMethods mapped to their numeric IDs. */
 const ADJUSTMENT_METHOD: { [ key: number ] : AdjustmentMethod } = {
-	0: ManualAdjustmentMethod,
-	1: ZimmermanAdjustmentMethod,
-	2: RainDelayAdjustmentMethod,
-	3: EToAdjustmentMethod
+	0: AdjustmentMethods.ManualAdjustmentMethod,
+	1: AdjustmentMethods.ZimmermanAdjustmentMethod,
+	2: AdjustmentMethods.RainDelayAdjustmentMethod,
+	3: AdjustmentMethods.EToAdjustmentMethod
 };
 
-const cache = new WateringScaleCache();
+const timeZoneLookup = new GoogleMapsTimeZoneLookup({ apiKey: '' })
+
+const cache = new WateringScaleCache({
+	timeZoneLookup,
+})
 
 /**
  * Resolves a location description to geographic coordinates.
@@ -83,8 +82,8 @@ export async function httpJSONRequest(url: string ): Promise< any > {
  * @param coordinates The coordinates to use to calculate time data.
  * @return The TimeData for the specified coordinates.
  */
-function getTimeData( coordinates: GeoCoordinates ): TimeData {
-	const timezone = moment().tz( geoTZ( coordinates[ 0 ], coordinates[ 1 ] )[ 0 ] ).utcOffset();
+async function getTimeData( coordinates: GeoCoordinates ): Promise<TimeData> {
+	const timezone = moment().tz( await timeZoneLookup.getTimeZoneId(coordinates) ).utcOffset();
 	const tzOffset: number = getTimezone( timezone, true );
 
 	// Calculate sunrise and sunset since Weather Underground does not provide it
@@ -128,57 +127,71 @@ function checkWeatherRestriction( adjustmentValue: number, weather: BaseWatering
 	return false;
 }
 
-export const getWeatherData = async function( req: express.Request, res: express.Response ) {
-	const location: string = getParameter(req.query.loc);
+export const getWeatherData = async function( req: Request ): Promise<Response> {
+	const url = new URL(req.url)
+	const location: string = getParameter(url.searchParams.get('loc'));
 
 	let coordinates: GeoCoordinates;
 	try {
 		coordinates = await resolveCoordinates( location );
 	} catch (err) {
-		res.send(`Error: Unable to resolve location (${err})`);
-		return;
+		return new Response(`Error: Unable to resolve location (${err})`, { status: 400 })
 	}
 
 	// Continue with the weather request
-	const timeData: TimeData = getTimeData( coordinates );
+	const timeData = await getTimeData( coordinates );
 	let weatherData: WeatherData;
 	try {
 		weatherData = await WEATHER_PROVIDER.getWeatherData( coordinates );
 	} catch ( err ) {
-		res.send( "Error: " + err );
-		return;
+		return new Response(`Error: ${err}`, { status: 400 })
 	}
 
-	res.json( {
+	return new Response(JSON.stringify({
 		...timeData,
 		...weatherData,
 		location: coordinates
-	} );
+	}), {
+		headers: {
+			'Content-Type': 'application/json'
+		}
+	})
 };
 
-// API Handler when using the weatherX.py where X represents the
-// adjustment method which is encoded to also carry the watering
-// restriction and therefore must be decoded
-export const getWateringData = async function( req: express.Request, res: express.Response ) {
-
-	// The adjustment method is encoded by the OpenSprinkler firmware and must be
-	// parsed. This allows the adjustment method and the restriction type to both
-	// be saved in the same byte.
-	let adjustmentMethod: AdjustmentMethod	= ADJUSTMENT_METHOD[ req.params[ 0 ] & ~( 1 << 7 ) ],
-		checkRestrictions: boolean			= ( ( req.params[ 0 ] >> 7 ) & 1 ) > 0,
-		adjustmentOptionsString: string		= getParameter(req.query.wto),
-		location: string | GeoCoordinates	= getParameter(req.query.loc),
-		outputFormat: string				= getParameter(req.query.format),
-		remoteAddress: string				= getParameter(req.headers[ "x-forwarded-for" ]) || req.connection.remoteAddress,
-		adjustmentOptions: AdjustmentOptions;
+function getRemoteAddress(request: Request) {
+	let remoteAddress = getParameter(request.headers.get('x-forwarded-for')) || request.headers.get('cf-connecting-ip')!
 
 	// X-Forwarded-For header may contain more than one IP address and therefore
 	// the string is split against a comma and the first value is selected
 	remoteAddress = remoteAddress.split( "," )[ 0 ];
 
+	return remoteAddress
+}
+
+/**
+ * API Handler for adjustment method requests from the controller firmware.
+ * The `method` request parameter represents the encoded adjustment method and watering restriction.
+ * @param req
+ * @returns
+ */
+export const getWateringData = async function(req: Request & { params: NonNullable<IRequest['params']> }): Promise<Response> {
+	// The adjustment method is encoded by the OpenSprinkler firmware and must be
+	// parsed. This allows the adjustment method and the restriction type to both
+	// be saved in the same byte.
+	const method = Number(req.params.method)
+	const url = new URL(req.url)
+	const adjustmentMethod: AdjustmentMethod	= ADJUSTMENT_METHOD[ method & ~( 1 << 7 ) ],
+		checkRestrictions: boolean			= ( ( method >> 7 ) & 1 ) > 0
+	let adjustmentOptionsString: string		= getParameter(url.searchParams.get('wto'))
+	const location: string | GeoCoordinates	= getParameter(url.searchParams.get('loc')),
+		outputFormat: string				= getParameter(url.searchParams.get('format'))
+	let adjustmentOptions: AdjustmentOptions;
+	const remoteAddress = getRemoteAddress(req)
+
+
+
 	if ( !adjustmentMethod ) {
-		sendWateringError( res, new CodedError( ErrorCode.InvalidAdjustmentMethod ));
-		return;
+		return sendWateringError(new CodedError( ErrorCode.InvalidAdjustmentMethod ));
 	}
 
 	// Parse weather adjustment options
@@ -191,8 +204,7 @@ export const getWateringData = async function( req: express.Request, res: expres
 		adjustmentOptions = JSON.parse( "{" + adjustmentOptionsString + "}" );
 	} catch ( err ) {
 		// If the JSON is not valid then abort the calculation
-		sendWateringError( res, new CodedError( ErrorCode.MalformedAdjustmentOptions ), adjustmentMethod != ManualAdjustmentMethod );
-		return;
+		return sendWateringError( new CodedError( ErrorCode.MalformedAdjustmentOptions ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 	}
 
 	// Attempt to resolve provided location to GPS coordinates.
@@ -200,11 +212,10 @@ export const getWateringData = async function( req: express.Request, res: expres
 	try {
 		coordinates = await resolveCoordinates( location );
 	} catch ( err ) {
-		sendWateringError( res, makeCodedError( err ), adjustmentMethod != ManualAdjustmentMethod );
-		return;
+		return sendWateringError( makeCodedError( err ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 	}
 
-	let timeData: TimeData = getTimeData( coordinates );
+	let timeData = await getTimeData( coordinates );
 
 	// Parse the PWS information.
 	let pws: PWS | undefined = undefined;
@@ -217,12 +228,10 @@ export const getWateringData = async function( req: express.Request, res: expres
 
 		// Make sure that the PWS ID and API key look valid.
 		if ( !pwsId ) {
-			sendWateringError( res, new CodedError( ErrorCode.InvalidPwsId ), adjustmentMethod != ManualAdjustmentMethod );
-			return;
+			return sendWateringError( new CodedError( ErrorCode.InvalidPwsId ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 		}
 		if ( !apiKey ) {
-			sendWateringError( res, new CodedError( ErrorCode.InvalidPwsApiKey ), adjustmentMethod != ManualAdjustmentMethod );
-			return;
+			return sendWateringError( new CodedError( ErrorCode.InvalidPwsApiKey ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 		}
 
 		pws = { id: pwsId, apiKey: apiKey };
@@ -230,20 +239,29 @@ export const getWateringData = async function( req: express.Request, res: expres
 
 	const weatherProvider = pws ? PWS_WEATHER_PROVIDER : WEATHER_PROVIDER;
 
-	const data = {
+	const data: {
+		scale:		number | undefined,
+		rd:		number | undefined,
+		tz:			number,
+		sunrise:	number,
+		sunset:		number,
+		eip:		number,
+		rawData:	Record<string, any>,
+		errCode:	0
+	} = {
 		scale:		undefined,
 		rd:			undefined,
 		tz:			getTimezone( timeData.timezone, undefined ),
 		sunrise:	timeData.sunrise,
 		sunset:		timeData.sunset,
 		eip:		ipToInt( remoteAddress ),
-		rawData:	undefined,
+		rawData:	{},
 		errCode:	0
 	};
 
-	let cachedScale: CachedScale;
+	let cachedScale: CachedScale | undefined;
 	if ( weatherProvider.shouldCacheWateringScale() ) {
-		cachedScale = cache.getWateringScale( req.params[ 0 ], coordinates, pws, adjustmentOptions );
+		cachedScale = await cache.getWateringScale( method, coordinates, pws, adjustmentOptions );
 	}
 
 	if ( cachedScale ) {
@@ -259,43 +277,41 @@ export const getWateringData = async function( req: express.Request, res: expres
 				adjustmentOptions, coordinates, weatherProvider, pws
 			);
 		} catch ( err ) {
-			sendWateringError( res, makeCodedError( err ), adjustmentMethod != ManualAdjustmentMethod );
-			return;
+			return sendWateringError( makeCodedError( err ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 		}
 
 		data.scale = adjustmentMethodResponse.scale;
 		data.rd = adjustmentMethodResponse.rainDelay;
-		data.rawData = adjustmentMethodResponse.rawData;
+		data.rawData = adjustmentMethodResponse.rawData!;
 
 		if ( checkRestrictions ) {
-			let wateringData: BaseWateringData = adjustmentMethodResponse.wateringData;
+			let wateringData = adjustmentMethodResponse.wateringData;
 			// Fetch the watering data if the AdjustmentMethod didn't fetch it and restrictions are being checked.
-			if ( checkRestrictions && !wateringData ) {
+			if (!wateringData) {
 				try {
 					wateringData = await weatherProvider.getWateringData( coordinates );
 				} catch ( err ) {
-					sendWateringError( res, makeCodedError( err ), adjustmentMethod != ManualAdjustmentMethod );
-					return;
+					return sendWateringError( makeCodedError( err ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 				}
 			}
 
 			// Check for any user-set restrictions and change the scale to 0 if the criteria is met
-			if ( checkWeatherRestriction( req.params[ 0 ], wateringData ) ) {
+			if ( checkWeatherRestriction( method, wateringData ) ) {
 				data.scale = 0;
 			}
 		}
 
 		// Cache the watering scale if caching is enabled and no error occurred.
 		if ( weatherProvider.shouldCacheWateringScale() ) {
-			cache.storeWateringScale( req.params[ 0 ], coordinates, pws, adjustmentOptions, {
-				scale: data.scale,
+			cache.storeWateringScale( method, coordinates, pws, adjustmentOptions, {
+				scale: data.scale!,
 				rawData: data.rawData,
-				rainDelay: data.rd
+				rainDelay: data.rd!,
 			} );
 		}
 	}
 
-	sendWateringData( res, data, outputFormat === "json" );
+	return sendWateringData( data, outputFormat === "json" );
 };
 
 /**
@@ -307,23 +323,22 @@ export const getWateringData = async function( req: express.Request, res: expres
  * occurred, but older firmware versions will still update the watering scale accordingly.
  * @param useJson Indicates if the response body should use a JSON format instead of a format similar to URL query strings.
  */
-function sendWateringError( res: express.Response, error: CodedError, resetScale: boolean = true, useJson: boolean = false ) {
+function sendWateringError( error: CodedError, resetScale: boolean = true, useJson: boolean = false ) {
 	if ( error.errCode === ErrorCode.UnexpectedError ) {
 		console.error( `An unexpected error occurred:`, error );
 	}
 
-	sendWateringData( res, { errCode: error.errCode, scale: resetScale ? 100 : undefined } );
+	return sendWateringData({ errCode: error.errCode, scale: resetScale ? 100 : undefined });
 }
 
 /**
  * Sends a response to an HTTP request with a 200 status code.
- * @param res The Express Response object to send the response through.
  * @param data An object containing key/value pairs that should be formatted in the response body.
  * @param useJson Indicates if the response body should use a JSON format instead of a format similar to URL query strings.
  */
-function sendWateringData( res: express.Response, data: object, useJson: boolean = false ) {
+function sendWateringData( data: Record<string, any>, useJson: boolean = false ) {
 	if ( useJson ) {
-		res.json( data );
+		return new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' }})
 	} else {
 		// Return the data formatted as a URL query string.
 		let formatted = "";
@@ -351,7 +366,7 @@ function sendWateringData( res: express.Response, data: object, useJson: boolean
 
 			formatted += `&${ key }=${ value }`;
 		}
-		res.send( formatted );
+		return new Response(formatted)
 	}
 }
 
@@ -363,40 +378,13 @@ function sendWateringData( res: express.Response, data: object, useJson: boolean
  * request or, response including API keys and other sensitive information.
  */
 async function httpRequest( url: string ): Promise< string > {
-	return new Promise< any >( ( resolve, reject ) => {
+	const response = await fetch(url)
 
-		const splitUrl: string[] = url.match( filters.url );
-		const isHttps = url.startsWith("https");
+	if (response.status !== 200 ) {
+		throw new Error( `Received ${ response.status } status code for URL '${ url }'.` )
+	}
 
-		const options = {
-			host: splitUrl[ 1 ],
-			port: splitUrl[ 2 ] || ( isHttps ? 443 : 80 ),
-			path: splitUrl[ 3 ]
-		};
-
-		( isHttps ? https : http ).get( options, ( response ) => {
-			if ( response.statusCode !== 200 ) {
-				reject( `Received ${ response.statusCode } status code for URL '${ url }'.` );
-				return;
-			}
-
-			let data = "";
-
-			// Reassemble the data as it comes in
-			response.on( "data", ( chunk ) => {
-				data += chunk;
-			} );
-
-			// Once the data is completely received, resolve the promise
-			response.on( "end", () => {
-				resolve( data );
-			} );
-		} ).on( "error", ( err ) => {
-
-			// If the HTTP request fails, reject the promise
-			reject( err );
-		} );
-	} );
+	return response.text()
 }
 
 /**
@@ -405,7 +393,7 @@ async function httpRequest( url: string ): Promise< string > {
  * @param obj The object to check.
  * @return A boolean indicating if the object has numeric values for all of the specified keys.
  */
-export function validateValues( keys: string[], obj: object ): boolean {
+export function validateValues( keys: string[], obj: Record<string, any> ): boolean {
 	let key: string;
 
 	// Return false if the object is null/undefined.
@@ -445,7 +433,7 @@ function getTimezone( time: number | string, useMinutes: boolean = false ): numb
 	} else {
 
 		// Match the provided time string against a regex for parsing
-		let splitTime = time.match( filters.time ) || time.match( filters.timezone );
+		let splitTime = time.match( filters.time )! || time.match( filters.timezone )!;
 
 		hour = parseInt( splitTime[ 7 ] + splitTime[ 8 ] );
 		minute = parseInt( splitTime[ 9 ] );
@@ -480,11 +468,11 @@ function ipToInt( ip: string ): number {
  * @param parameter An array of parameters or a single parameter value.
  * @return The first element in the array of parameter or the single parameter provided.
  */
-export function getParameter( parameter: string | string[] ): string {
+export function getParameter( parameter: string | string[] | null): string {
 	if ( Array.isArray( parameter ) ) {
 		parameter = parameter[0];
 	}
 
 	// Return an empty string if the parameter is undefined.
-	return parameter || "";
+	return parameter ?? '';
 }
