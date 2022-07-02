@@ -171,7 +171,7 @@
     undici "5.5.1"
     ws "^8.2.2"
 
-"@turf/boolean-point-in-polygon@^6.0.1":
+"@turf/boolean-point-in-polygon@^6.5.0":
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@turf/boolean-point-in-polygon/-/boolean-point-in-polygon-6.5.0.tgz#6d2e9c89de4cd2e4365004c1e51490b7795a63cf"
   integrity sha512-DtSuVFB26SI+hj0SjrvXowGTUCHlgevPAIsukssW6BG5MlNSBQAo70wpICBNJL6RjukXg8d2eXaAWuD/CqL00A==
@@ -179,7 +179,7 @@
     "@turf/helpers" "^6.5.0"
     "@turf/invariant" "^6.5.0"
 
-"@turf/helpers@^6.1.4", "@turf/helpers@^6.5.0":
+"@turf/helpers@^6.5.0":
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/@turf/helpers/-/helpers-6.5.0.tgz#f79af094bd6b8ce7ed2bd3e089a8493ee6cae82e"
   integrity sha512-VbI1dV5bLFzohYYdgqwikdMVpe7pJ9X3E+dlr425wa2/sMJqYDhTO++ec38/pcPvPE6oD9WEEeU3Xu3gza+VPw==
@@ -1257,18 +1257,17 @@ functions-have-names@^1.2.2:
   resolved "https://registry.yarnpkg.com/functions-have-names/-/functions-have-names-1.2.3.tgz#0404fe4ee2ba2f607f0e0ec3c80bae994133b834"
   integrity sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==
 
-geo-tz@^5.0.4:
-  version "5.1.0"
-  resolved "https://registry.yarnpkg.com/geo-tz/-/geo-tz-5.1.0.tgz#7cfb3046109287b8f0d1ed5d54cf4ffab1b4fbf4"
-  integrity sha512-W5eiXHAgfQz41jDf0KvBjvwOblySw3yz7cjeUjwezKTVt9GILNCsoMN7xXWdS5PncH+ZS01IzjfiBs1WqHSJ8A==
+geo-tz@^7.0:
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/geo-tz/-/geo-tz-7.0.2.tgz#c26d6980e02f6b991c931298e3821cb1420c8622"
+  integrity sha512-H/loC6hQCSsns7VOrk8dIaHXtE0LzI/+239enbTrFYpWcM0DQxdBopKgnijC1yYXtiz5PDALdYAwTs1rgG2aiQ==
   dependencies:
-    "@turf/boolean-point-in-polygon" "^6.0.1"
-    "@turf/helpers" "^6.1.4"
-    geobuf "^3.0.1"
-    pbf "^3.2.0"
-    timed-cache "^1.1.1"
+    "@turf/boolean-point-in-polygon" "^6.5.0"
+    "@turf/helpers" "^6.5.0"
+    geobuf "^3.0.2"
+    pbf "^3.2.1"
 
-geobuf@^3.0.1:
+geobuf@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/geobuf/-/geobuf-3.0.2.tgz#9b4debb57ce72ca2bef027223f3098c4f3975cd3"
   integrity sha512-ASgKwEAQQRnyNFHNvpd5uAwstbVYmiTW0Caw3fBb509tNTqXyAAPMyFs5NNihsLZhLxU1j/kjFhkhLWA9djuVg==
@@ -2303,7 +2302,7 @@ pathval@^1.1.1:
   resolved "https://registry.yarnpkg.com/pathval/-/pathval-1.1.1.tgz#8534e77a77ce7ac5a2512ea21e0fdb8fcf6c3d8d"
   integrity sha512-Dp6zGqpTdETdR63lehJYPeIOqpiNBNtc7BpWSLrOje7UaIsE5aY92r/AunQA7rsXvet3lrJ3JnZX29UPTKXyKQ==
 
-pbf@^3.2.0, pbf@^3.2.1:
+pbf@^3.2.1:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/pbf/-/pbf-3.2.1.tgz#b4c1b9e72af966cd82c6531691115cc0409ffe2a"
   integrity sha512-ClrV7pNOn7rtmoQVF4TS1vyU0WhYRnP92fzbfF75jAIwpnzdJXf8iTd4CMEqO4yUenH6NDqLiwjqlh6QgZzgLQ==
@@ -2831,7 +2830,7 @@ strip-json-comments@~2.0.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-2.0.1.tgz#3c531942e908c2697c0ec344858c286c7ca0a60a"
   integrity sha512-4gB8na07fecVVkOI6Rs4e7T6NOTki5EmL7TUduTs6bu3EdnSycntVJ4re8kgZA+wx9IueI2Y11bfbgwtzuE0KQ==
 
-suncalc@^1.8.0:
+suncalc@^1.9:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/suncalc/-/suncalc-1.9.0.tgz#26212353fae61edb287c2d558fc4932ecf0e1532"
   integrity sha512-vMJ8Byp1uIPoj+wb9c1AdK4jpkSKVAywgHX0lqY7zt6+EWRRC3Z+0Ucfjy/0yxTVO1hwwchZe4uoFNqrIC24+A==
@@ -2861,11 +2860,6 @@ text-encoding@^0.6.4:
   version "0.6.4"
   resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.6.4.tgz#e399a982257a276dae428bb92845cb71bdc26d19"
   integrity sha512-hJnc6Qg3dWoOMkqP53F0dzRIgtmsAge09kxUIqGrEUS4qr5rWLckGYaQAVr+opBrIMRErGgy6f5aPnyPpyGRfg==
-
-timed-cache@^1.1.1:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/timed-cache/-/timed-cache-1.1.5.tgz#2f3da24366c588a5f080f72c3579501b08d59439"
-  integrity sha512-+pWNc00bPujFdOufjBqPmX5kYoVR2dLmCrA0ZyoN/qg7vLjaazGqOQu8MaKIOh6sSKairUMwP/gNDcnQPtxryg==
 
 timed-out@^4.0.0:
   version "4.0.1"
