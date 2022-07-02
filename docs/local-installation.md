@@ -36,9 +36,7 @@ pi@OSPi:~/weather $ npm run compile
 
 * **Step 4a:** If you want to use the Open Weather Map API, go to `https://openweathermap.org/appid` to register with OpenWeatherMaps and obtain an API key that is needed to request weather information.
 
-* **Step 4b:** If you want to use the Dark Sky API, go to `https://darksky.net/dev` to register with Dark Sky and obtain an API key that is needed to request weather information.
-
-* **Step 4c:** If you want just want to use your PWS for weather information then you dont need to register for either Open Weather Map nor DarkSky.
+* **Step 4b:** If you want just want to use your PWS for weather information then you don't need to register for Open Weather Map.
 
 **Step 5:** The file `.env` is used by the weather server to specify the interface and port to listen on for requests coming from your OpenSprinkler device. You need to create a new `.env` file and enter some configuration details.
 ```
@@ -60,13 +58,7 @@ WEATHER_PROVIDER=OWM
 OWM_API_KEY=<YOUR OWM KEY>
 ```
 
-* **Step 5b:** If you registered for the Dark Sky API then also add these two lines to the .env file:
-```
-WEATHER_PROVIDER=DarkSky
-DARKSKY_API_KEY=<YOUR DARK SKY KEY>
-```
-
-* **Step 5c:** If you wanted to use your PWS information then make sure to add two lines to the .env file:
+* **Step 5b:** If you wanted to use your PWS information then make sure to add two lines to the .env file:
 ```
 WEATHER_PROVIDER=local
 PWS=WU
