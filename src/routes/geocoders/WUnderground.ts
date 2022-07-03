@@ -28,4 +28,8 @@ export default class WUnderground extends Geocoder {
 			throw new CodedError( ErrorCode.NoLocationFound );
 		}
 	}
+
+	protected enableCache() {
+		return true
+	}
 }

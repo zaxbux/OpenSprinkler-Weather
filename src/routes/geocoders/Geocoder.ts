@@ -1,28 +1,22 @@
 import { GeoCoordinates } from "@/types";
 import { CodedError, ErrorCode } from "@/errors";
 
+export abstract class GeocoderCache {
+	public abstract has(key: string): Promise<boolean>
+	public abstract get(key: string): Promise<GeoCoordinates | undefined>
+	public abstract set(key: string, value: GeoCoordinates): Promise<void>
+}
+
+export interface GeocoderOptions {
+	cache: GeocoderCache
+}
+
 export abstract class Geocoder {
 
-	private static cacheFile: string = __dirname + "/../../../geocoderCache.json";
+	private options: GeocoderOptions
 
-	private cache: Map<string, GeoCoordinates>;
-
-	public constructor() {
-		// Load the cache from disk.
-		if ( fs.existsSync( Geocoder.cacheFile ) ) {
-			this.cache = new Map( JSON.parse( fs.readFileSync( Geocoder.cacheFile, "utf-8" ) ) );
-		} else {
-			this.cache = new Map();
-		}
-
-		// Write the cache to disk every 5 minutes.
-		setInterval( () => {
-			this.saveCache();
-		}, 5 * 60 * 1000 );
-	}
-
-	private saveCache(): void {
-		fs.writeFileSync( Geocoder.cacheFile, JSON.stringify( Array.from( this.cache.entries() ) ) );
+	public constructor(options: GeocoderOptions) {
+		this.options = options
 	}
 
 	/**
@@ -31,33 +25,39 @@ export abstract class Geocoder {
 	 * @return A Promise that will be resolved with the GeoCoordinates of the specified location, or rejected with a
 	 * CodedError.
 	 */
-	protected abstract geocodeLocation( location: string ): Promise<GeoCoordinates>;
+	protected abstract geocodeLocation(location: string): Promise<GeoCoordinates>;
 
 	/**
 	 * Converts a location name to geographic coordinates, first checking the cache and updating it if necessary.
 	 */
-	public async getLocation( location: string ): Promise<GeoCoordinates> {
-		if ( this.cache.has( location ) ) {
-			const coords = this.cache.get( location );
-			if ( !coords ) {
+	public async getLocation(location: string): Promise<GeoCoordinates> {
+		if (this.enableCache() && this.options.cache.has(location)) {
+			const coords = await this.options.cache.get(location);
+			if (!coords || (coords[0] === 0 && coords[1] === 0)) {
 				// Throw an error if there are no results for this location.
-				throw new CodedError( ErrorCode.NoLocationFound );
+				throw new CodedError(ErrorCode.NoLocationFound);
 			} else {
 				return coords;
 			}
 		}
 
 		try {
-			const coords: GeoCoordinates = await this.geocodeLocation( location );
-			this.cache.set( location, coords );
+			const coords = await this.geocodeLocation(location);
+			if (this.enableCache()) {
+				this.options.cache.set(location, coords);
+			}
 			return coords;
-		} catch ( ex ) {
-			if ( ex instanceof CodedError && ex.errCode === ErrorCode.NoLocationFound ) {
+		} catch (ex) {
+			if (ex instanceof CodedError && ex.errCode === ErrorCode.NoLocationFound) {
 				// Store in the cache the fact that this location has no results.
-				this.cache.set( location, null );
+				if (this.enableCache()) {
+					this.options.cache.set(location, [0, 0])
+				}
 			}
 
 			throw ex;
 		}
 	}
+
+	protected abstract enableCache(): boolean
 }

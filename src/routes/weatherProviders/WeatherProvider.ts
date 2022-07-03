@@ -11,6 +11,7 @@ export class WeatherProvider {
 	 * @return A Promise that will be resolved with the ZimmermanWateringData if it is successfully retrieved,
 	 * or rejected with a CodedError if an error occurs while retrieving the ZimmermanWateringData (or the WeatherProvider
 	 * does not support this method).
+	 * @throws {CodedError}
 	 */
 	getWateringData( coordinates: GeoCoordinates, pws?: PWS ): Promise< ZimmermanWateringData > {
 		throw new CodedError( ErrorCode.UnsupportedAdjustmentMethod );

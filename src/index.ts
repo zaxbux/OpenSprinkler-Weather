@@ -4,6 +4,7 @@ import packageJson from '../package.json'
 
 import { getWateringData, getWeatherData } from "@/routes/weather"
 import { getBaselineETo } from "@/routes/baselineETo"
+import { Env } from './bindings'
 
 
 const router = Router();
@@ -24,6 +25,10 @@ router.get('/weatherData', getWeatherData)
 // This route is for the GUI
 router.options('/baselineETo', cors())
 router.get('/baselineETo', getBaselineETo)
+
+router.put('/baseline-eto', async (request: Request, env: Env) => {
+	await env.ETO_BASELINE_BUCKET.put('Baseline_ETo_Data.bin', request.body)
+})
 
 // Handle 404
 router.get('*', (request) => {

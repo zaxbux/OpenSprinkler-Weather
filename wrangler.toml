@@ -1,3 +1,13 @@
 name = "opensprinkler-weather"
 main = "src/index.ts"
 compatibility_date = "2022-07-02"
+workers_dev = true
+
+[vars]
+TIMEZONE = "America/Vancouver"
+WEATHER_PROVIDER = "OWM"
+
+[[r2_buckets]]
+binding = 'ETO_BASELINE_BUCKET'
+bucket_name = "opensprinkler-development"
+preview_bucket_name = "opensprinkler-development"

@@ -21,7 +21,7 @@ export const getBaselineETo = async function(req: Request, env: Env): Promise<Re
 	// Attempt to resolve provided location to GPS coordinates.
 	let coordinates: GeoCoordinates;
 	try {
-		coordinates = await resolveCoordinates( location );
+		coordinates = await resolveCoordinates( location, env );
 	} catch (err) {
 		return new Response( `Error: Unable to resolve coordinates for location (${ err })`, { status: 404 })
 	}

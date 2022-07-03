@@ -1,19 +1,96 @@
 import SunCalc from "suncalc";
 import moment from "moment-timezone";
 
-import { BaseWateringData, GeoCoordinates, PWS, TimeData, WeatherData } from "@/types";
-import { WeatherProvider } from "./weatherProviders/WeatherProvider";
+import { BaseWateringData, GeoCoordinates, PWS, TimeData, WeatherData, WeatherProviderShortID } from "@/types";
+//import { WeatherProvider } from "./weatherProviders/WeatherProvider";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./adjustmentMethods/AdjustmentMethod";
 import WateringScaleCache, { CachedScale } from "../WateringScaleCache";
 import AdjustmentMethods from '@/routes/adjustmentMethods'
 import { CodedError, ErrorCode, makeCodedError } from "@/errors";
-import { Geocoder } from "./geocoders/Geocoder";
+//import { Geocoder } from "./geocoders/Geocoder";
 import type { Request as IRequest } from 'itty-router';
 import { GoogleMapsTimeZoneLookup } from '@/timeZoneLookup/GoogleMaps';
+import { CloudflareGeocoderCache } from './geocoders/CloudflareGeocoderCache';
+import WUnderground from './geocoders/WUnderground';
+import { WeatherProvider } from './weatherProviders/WeatherProvider';
+import { Env } from '@/bindings';
+import { Geocoder, GeocoderCache } from './geocoders/Geocoder';
+import { NullGeocoderCache } from './geocoders/NullGeocoderCache';
+import GoogleMaps from './geocoders/GoogleMaps';
+import { TimeZoneLookup } from '@/timeZoneLookup';
+import { StaticTimeZoneLookup } from '@/timeZoneLookup/Static';
 
-const WEATHER_PROVIDER: WeatherProvider = new ( require("./weatherProviders/" + ( process.env.WEATHER_PROVIDER || "OWM" ) ).default )();
-const PWS_WEATHER_PROVIDER: WeatherProvider = new ( require("./weatherProviders/" + ( process.env.PWS_WEATHER_PROVIDER || "WUnderground" ) ).default )();
-const GEOCODER: Geocoder = new ( require("./geocoders/" + ( process.env.GEOCODER || "WUnderground" ) ).default )();
+//const WEATHER_PROVIDER: WeatherProvider = new ( import("./weatherProviders/" + ( process.env.WEATHER_PROVIDER || WeatherProviderShortID.OpenWeatherMap ) ).default )();
+//const PWS_WEATHER_PROVIDER: WeatherProvider = new ( import("./weatherProviders/" + ( process.env.PWS_WEATHER_PROVIDER || WeatherProviderShortID.WUnderground ) ).default )();
+//const GEOCODER: Geocoder = new ( import("./geocoders/" + ( process.env.GEOCODER || "WUnderground" ) ).default )();
+
+const getWeatherProvider = async (env: Env): Promise<WeatherProvider> => {
+	switch (env.WEATHER_PROVIDER) {
+		case WeatherProviderShortID.OpenWeatherMap:
+			return new ((await import('@/routes/weatherProviders/OWM')).default)(env.OWM_API_KEY)
+		case WeatherProviderShortID.WUnderground:
+			return new ((await import ('@/routes/weatherProviders/WUnderground')).default)()
+	}
+
+	throw new Error(`Unknown weather provider (${env.WEATHER_PROVIDER})`)
+}
+
+const getPWSWeatherProvider = async (env: Env): Promise<WeatherProvider> => {
+	switch (env.PWS_WEATHER_PROVIDER) {
+		case WeatherProviderShortID.OpenWeatherMap:
+			return new ((await import('@/routes/weatherProviders/OWM')).default)(env.OWM_API_KEY)
+		case WeatherProviderShortID.WUnderground:
+			return new ((await import ('@/routes/weatherProviders/WUnderground')).default)()
+	}
+
+	throw new Error(`Unknown weather provider (${env.PWS_WEATHER_PROVIDER})`)
+}
+
+const getGeocoderCache = async (env: Env): Promise<GeocoderCache> => {
+	switch (env.GEOCODER_CACHE) {
+		case 'Cloudflare':
+			return new CloudflareGeocoderCache(env.GEOCODER_CACHE_KV)
+	}
+
+	return new NullGeocoderCache()
+}
+
+const getGeocoderProvider = async (env: Env): Promise<Geocoder> => {
+	const cache = await getGeocoderCache(env)
+
+	switch (env.GEOCODER) {
+		case 'WUnderground':
+			return new WUnderground({ cache })
+		case 'GoogleMaps':
+			return new GoogleMaps(env.GOOGLE_MAPS_API_KEY, { cache })
+	}
+
+	throw new Error(`Unknown geocoder (${env.GEOCODER})`)
+}
+
+const getTimeZoneLookup = async (env: Env): Promise<TimeZoneLookup> => {
+	switch (env.TIMEZONE_LOOKUP) {
+		case 'GoogleMaps':
+			return new GoogleMapsTimeZoneLookup({ apiKey: env.GOOGLE_MAPS_API_KEY })
+	}
+
+	if (env.TIMEZONE) {
+		return new StaticTimeZoneLookup({ timeZoneId: env.TIMEZONE })
+	}
+
+	throw new Error(`Unknown timezone lookup (${env.TIMEZONE_LOOKUP})`)
+}
+
+const getWateringScaleCache = async (env: Env): Promise<WateringScaleCache> => {
+	const timeZoneLookup = await getTimeZoneLookup(env)
+
+	switch (env.WATERING_SCALE_CACHE) {
+		case 'Cloudflare':
+			return new WateringScaleCache({ timeZoneLookup })
+	}
+
+	throw new Error(`Unknown watering scale cache (${env.WATERING_SCALE_CACHE})`)
+}
 
 // Define regex filters to match against location
 const filters = {
@@ -32,19 +109,13 @@ const ADJUSTMENT_METHOD: { [ key: number ] : AdjustmentMethod } = {
 	3: AdjustmentMethods.EToAdjustmentMethod
 };
 
-const timeZoneLookup = new GoogleMapsTimeZoneLookup({ apiKey: '' })
-
-const cache = new WateringScaleCache({
-	timeZoneLookup,
-})
-
 /**
  * Resolves a location description to geographic coordinates.
  * @param location A partial zip/city/country or a coordinate pair.
  * @return A promise that will be resolved with the coordinates of the best match for the specified location, or
  * rejected with a CodedError if unable to resolve the location.
  */
-export async function resolveCoordinates( location: string ): Promise< GeoCoordinates > {
+export async function resolveCoordinates( location: string, env: Env ): Promise< GeoCoordinates > {
 
 	if ( !location ) {
 		throw new CodedError( ErrorCode.InvalidLocationFormat );
@@ -56,8 +127,26 @@ export async function resolveCoordinates( location: string ): Promise< GeoCoordi
 		const split: string[] = location.split( "," );
 		return [ parseFloat( split[ 0 ] ), parseFloat( split[ 1 ] ) ];
 	} else {
-		return GEOCODER.getLocation( location );
+		const geocoder = await getGeocoderProvider(env)
+		return geocoder.getLocation( location );
 	}
+}
+
+/**
+ * Makes an HTTP/HTTPS GET request to the specified URL and returns the response body.
+ * @param url The URL to fetch.
+ * @return A Promise that will be resolved the with response body if the request succeeds, or will be rejected with an
+ * error if the request fails or returns a non-200 status code. This error may contain information about the HTTP
+ * request or, response including API keys and other sensitive information.
+ */
+ async function httpRequest( url: string ): Promise< string > {
+	const response = await fetch(url)
+
+	if (response.status !== 200 ) {
+		throw new Error( `Received ${ response.status } status code for URL '${ url }'.` )
+	}
+
+	return response.text()
 }
 
 /**
@@ -67,7 +156,7 @@ export async function resolveCoordinates( location: string ): Promise< GeoCoordi
  * with an error if the request or JSON parsing fails. This error may contain information about the HTTP request or,
  * response including API keys and other sensitive information.
  */
-export async function httpJSONRequest(url: string ): Promise< any > {
+export async function httpJSONRequest<T = any>(url: string ): Promise<T> {
 	try {
 		const data: string = await httpRequest(url);
 		return JSON.parse(data);
@@ -82,7 +171,8 @@ export async function httpJSONRequest(url: string ): Promise< any > {
  * @param coordinates The coordinates to use to calculate time data.
  * @return The TimeData for the specified coordinates.
  */
-async function getTimeData( coordinates: GeoCoordinates ): Promise<TimeData> {
+async function getTimeData( coordinates: GeoCoordinates, env: Env ): Promise<TimeData> {
+	const timeZoneLookup = await getTimeZoneLookup(env)
 	const timezone = moment().tz( await timeZoneLookup.getTimeZoneId(coordinates) ).utcOffset();
 	const tzOffset: number = getTimezone( timezone, true );
 
@@ -127,22 +217,23 @@ function checkWeatherRestriction( adjustmentValue: number, weather: BaseWatering
 	return false;
 }
 
-export const getWeatherData = async function( req: Request ): Promise<Response> {
+export const getWeatherData = async function( req: Request, env: Env ): Promise<Response> {
 	const url = new URL(req.url)
 	const location: string = getParameter(url.searchParams.get('loc'));
 
 	let coordinates: GeoCoordinates;
 	try {
-		coordinates = await resolveCoordinates( location );
+		coordinates = await resolveCoordinates( location, env );
 	} catch (err) {
 		return new Response(`Error: Unable to resolve location (${err})`, { status: 400 })
 	}
 
 	// Continue with the weather request
-	const timeData = await getTimeData( coordinates );
+	const timeData = await getTimeData( coordinates, env );
 	let weatherData: WeatherData;
 	try {
-		weatherData = await WEATHER_PROVIDER.getWeatherData( coordinates );
+		const weatherProvider = await getWeatherProvider(env)
+		weatherData = await weatherProvider.getWeatherData( coordinates );
 	} catch ( err ) {
 		return new Response(`Error: ${err}`, { status: 400 })
 	}
@@ -174,7 +265,7 @@ function getRemoteAddress(request: Request) {
  * @param req
  * @returns
  */
-export const getWateringData = async function(req: Request & { params: NonNullable<IRequest['params']> }): Promise<Response> {
+export const getWateringData = async function(req: Request & { params: NonNullable<IRequest['params']> }, env: Env): Promise<Response> {
 	// The adjustment method is encoded by the OpenSprinkler firmware and must be
 	// parsed. This allows the adjustment method and the restriction type to both
 	// be saved in the same byte.
@@ -210,12 +301,12 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 	// Attempt to resolve provided location to GPS coordinates.
 	let coordinates: GeoCoordinates;
 	try {
-		coordinates = await resolveCoordinates( location );
+		coordinates = await resolveCoordinates( location, env );
 	} catch ( err ) {
 		return sendWateringError( makeCodedError( err ), adjustmentMethod != AdjustmentMethods.ManualAdjustmentMethod );
 	}
 
-	let timeData = await getTimeData( coordinates );
+	let timeData = await getTimeData( coordinates, env );
 
 	// Parse the PWS information.
 	let pws: PWS | undefined = undefined;
@@ -237,7 +328,7 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 		pws = { id: pwsId, apiKey: apiKey };
 	}
 
-	const weatherProvider = pws ? PWS_WEATHER_PROVIDER : WEATHER_PROVIDER;
+	const weatherProvider = pws ? await getPWSWeatherProvider(env) : await getWeatherProvider(env);
 
 	const data: {
 		scale:		number | undefined,
@@ -259,8 +350,10 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 		errCode:	0
 	};
 
+	let cache: WateringScaleCache;
 	let cachedScale: CachedScale | undefined;
 	if ( weatherProvider.shouldCacheWateringScale() ) {
+		cache = await getWateringScaleCache(env)
 		cachedScale = await cache.getWateringScale( method, coordinates, pws, adjustmentOptions );
 	}
 
@@ -303,7 +396,7 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 
 		// Cache the watering scale if caching is enabled and no error occurred.
 		if ( weatherProvider.shouldCacheWateringScale() ) {
-			cache.storeWateringScale( method, coordinates, pws, adjustmentOptions, {
+			cache!.storeWateringScale( method, coordinates, pws, adjustmentOptions, {
 				scale: data.scale!,
 				rawData: data.rawData,
 				rainDelay: data.rd!,
@@ -370,22 +463,7 @@ function sendWateringData( data: Record<string, any>, useJson: boolean = false )
 	}
 }
 
-/**
- * Makes an HTTP/HTTPS GET request to the specified URL and returns the response body.
- * @param url The URL to fetch.
- * @return A Promise that will be resolved the with response body if the request succeeds, or will be rejected with an
- * error if the request fails or returns a non-200 status code. This error may contain information about the HTTP
- * request or, response including API keys and other sensitive information.
- */
-async function httpRequest( url: string ): Promise< string > {
-	const response = await fetch(url)
 
-	if (response.status !== 200 ) {
-		throw new Error( `Received ${ response.status } status code for URL '${ url }'.` )
-	}
-
-	return response.text()
-}
 
 /**
  * Checks if the specified object contains numeric values for each of the specified keys.
