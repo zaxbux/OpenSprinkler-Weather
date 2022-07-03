@@ -1,17 +1,23 @@
-import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "@/types";
+import { GeoCoordinates, WeatherData, WeatherProviderShortID, ZimmermanWateringData } from "@/types";
 import { httpJSONRequest } from "@/routes/weather";
 import { WeatherProvider } from "./WeatherProvider";
 import { approximateSolarRadiation, CloudCoverInfo, EToData } from "@/routes/adjustmentMethods/EToAdjustmentMethod";
-import * as moment from "moment";
+import moment from "moment";
 import { CodedError, ErrorCode } from "@/errors";
+
+const enum Units {
+	Standard = 'standard',
+	Metric = 'metric',
+	Imperial = 'imperial',
+}
 
 export default class OWMWeatherProvider extends WeatherProvider {
 
 	private readonly API_KEY: string;
 
-	public constructor() {
+	public constructor(apiKey: string) {
 		super();
-		this.API_KEY = process.env.OWM_API_KEY;
+		this.API_KEY = apiKey;
 		if (!this.API_KEY) {
 			throw "OWM_API_KEY environment variable is not defined.";
 		}
@@ -19,20 +25,19 @@ export default class OWMWeatherProvider extends WeatherProvider {
 
 	public async getWateringData(coordinates: GeoCoordinates): Promise<ZimmermanWateringData> {
 		// The OWM free API options changed so need to use the new API method
-		const forecastUrl = `https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,daily,alerts&appid=${ this.API_KEY }&units=imperial&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`;
+		const forecastUrl = `https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,daily,alerts&appid=${ this.API_KEY }&units=${Units.Metric}&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`;
 
 		// Perform the HTTP request to retrieve the weather data
 		let forecast;
-		let hourlyForecast;
 		try {
 
-			hourlyForecast = await httpJSONRequest(forecastUrl);
+			const response = await httpJSONRequest(forecastUrl);
 
 			// The new API call only offers 48 hours of hourly forecast data which is fine because we only use 24 hours
 			// just need to translate the data into blocks of 3 hours and then use as normal.
 			// Could probably skip this but less chance of changing the output this way
-			if (hourlyForecast && hourlyForecast.hourly) {
-				forecast = this.get3hForecast(hourlyForecast.hourly, 24);
+			if (response && response.hourly) {
+				forecast = this.get3hForecast(response.hourly, 24);
 			}
 
 		} catch ( err ) {
@@ -57,18 +62,18 @@ export default class OWMWeatherProvider extends WeatherProvider {
 		}
 
 		return {
-			weatherProvider: "OWM",
+			weatherProvider: WeatherProviderShortID.OpenWeatherMap,
 			temp: totalTemp / periods,
 			humidity: totalHumidity / periods,
-			precip: totalPrecip / 25.4,
+			precip: totalPrecip,
 			raining: ( forecast.list[ 0 ].rain ? ( parseFloat( forecast.list[ 0 ].rain[ "3h" ] || 0 ) > 0 ) : false )
 		};
 	}
 
 	public async getWeatherData(coordinates: GeoCoordinates): Promise<WeatherData> {
 		// The OWM free API options changed so need to use the new API method
-		const currentUrl = `https://api.openweathermap.org/data/2.5/weather?appid=${ this.API_KEY }&units=imperial&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`,
-			forecastDailyUrl = `https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,hourly,alerts&appid=${ this.API_KEY }&units=imperial&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`;
+		const currentUrl = `https://api.openweathermap.org/data/2.5/weather?appid=${ this.API_KEY }&units=${ Units.Metric }&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`,
+			forecastDailyUrl = `https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,hourly,alerts&appid=${ this.API_KEY }&units=${ Units.Metric }&lat=${ coordinates[ 0 ] }&lon=${ coordinates[ 1 ] }`;
 
 		let current, forecast;
 		try {
@@ -100,7 +105,7 @@ export default class OWMWeatherProvider extends WeatherProvider {
 			city: forecast.city.name,
 			minTemp: parseInt(forecast.list[0].temp.min),
 			maxTemp: parseInt(forecast.list[0].temp.max),
-			precip: (forecast.list[0].rain ? parseFloat(forecast.list[0].rain || 0) : 0) / 25.4,
+			precip: (forecast.list[0].rain ? parseFloat(forecast.list[0].rain || 0) : 0),
 			forecast: []
 		};
 
@@ -120,8 +125,7 @@ export default class OWMWeatherProvider extends WeatherProvider {
 	// Uses a rolling window since forecast data from further in the future (i.e. the next full day) would be less accurate.
 	async getEToData(coordinates: GeoCoordinates): Promise<EToData> {
 		// The OWM API changed what you get on the free subscription so need to adjust the call and translate the data.
-		const OWM_API_KEY = process.env.OWM_API_KEY,
-			forecastUrl = "https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,daily,alerts&appid=" + OWM_API_KEY + "&units=imperial&lat=" + coordinates[0] + "&lon=" + coordinates[1];
+		const forecastUrl = "https://api.openweathermap.org/data/2.5/onecall?exclude=current,minutely,daily,alerts&appid=" + this.API_KEY + "&units=imperial&lat=" + coordinates[0] + "&lon=" + coordinates[1];
 
 		// Perform the HTTP request to retrieve the weather data
 		let forecast;
@@ -175,7 +179,7 @@ export default class OWMWeatherProvider extends WeatherProvider {
 		}
 
 		return {
-			weatherProvider: "OWM",
+			weatherProvider: WeatherProviderShortID.OpenWeatherMap,
 			periodStartTime: samples[ 0 ].dt,
 			minTemp: minTemp,
 			maxTemp: maxTemp,
@@ -185,7 +189,7 @@ export default class OWMWeatherProvider extends WeatherProvider {
 			// Assume wind speed measurements are taken at 2 meters.
 			windSpeed: samples.reduce( ( sum, window ) => sum + ( window.wind.speed || 0 ), 0) / samples.length,
 			// OWM always returns precip in mm, so it must be converted.
-			precip: samples.reduce( ( sum, window ) => sum + ( window.rain ? window.rain[ "3h" ] || 0 : 0 ), 0) / 25.4
+			precip: samples.reduce( ( sum, window ) => sum + ( window.rain ? window.rain[ "3h" ] || 0 : 0 ), 0)
 		};
 	}
 

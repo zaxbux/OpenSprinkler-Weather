@@ -18,11 +18,11 @@ export interface TimeData {
 export interface WeatherData {
     /** The WeatherProvider that generated this data. */
     weatherProvider: WeatherProviderId;
-    /** The current temperature (in Fahrenheit). */
+    /** The current temperature (in Celsius). */
     temp: number;
     /** The current humidity (as a percentage). */
     humidity: number;
-    /** The current wind speed (in miles per hour). */
+    /** The current wind speed (in meters per second). */
     wind: number;
     /** A human-readable description of the weather. */
     description: string;
@@ -30,20 +30,20 @@ export interface WeatherData {
     icon: string;
     region: string;
     city: string;
-    /** The forecasted minimum temperature for the current day (in Fahrenheit). */
+    /** The forecasted minimum temperature for the current day (in Celsius). */
     minTemp: number;
-    /** The forecasted minimum temperature for the current day (in Fahrenheit). */
+    /** The forecasted minimum temperature for the current day (in Celsius). */
     maxTemp: number;
-    /** The forecasted total precipitation for the current day (in inches). */
+    /** The forecasted total precipitation for the current day (in millimeters). */
     precip: number;
     forecast: WeatherDataForecast[]
 }
 
 /** The forecasted weather for a specific day in the future. */
 export interface WeatherDataForecast {
-    /** The forecasted minimum temperature for this day (in Fahrenheit). */
+    /** The forecasted minimum temperature for this day (in Celsius). */
     temp_min: number;
-    /** The forecasted maximum temperature for this day (in Fahrenheit). */
+    /** The forecasted maximum temperature for this day (in Celsius). */
     temp_max: number;
     /** The timestamp of the day this forecast is for (in Unix epoch seconds). */
     date: number;
@@ -56,7 +56,7 @@ export interface WeatherDataForecast {
 export interface BaseWateringData {
     /** The WeatherProvider that generated this data. */
     weatherProvider: WeatherProviderShortId;
-    /** The total precipitation over the window (in inches). */
+    /** The total precipitation over the window (in millimeters). */
     precip: number;
 }
 
@@ -66,7 +66,7 @@ export interface BaseWateringData {
  * available.
  */
 export interface ZimmermanWateringData extends BaseWateringData {
-    /** The average temperature over the window (in Fahrenheit). */
+    /** The average temperature over the window (in Celsius). */
     temp: number;
     /** The average humidity over the window (as a percentage). */
     humidity: number;
