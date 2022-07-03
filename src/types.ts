@@ -17,7 +17,7 @@ export interface TimeData {
 
 export interface WeatherData {
     /** The WeatherProvider that generated this data. */
-    weatherProvider: WeatherProviderId;
+    weatherProvider: WeatherProviderID;
     /** The current temperature (in Celsius). */
     temp: number;
     /** The current humidity (as a percentage). */
@@ -55,7 +55,7 @@ export interface WeatherDataForecast {
 
 export interface BaseWateringData {
     /** The WeatherProvider that generated this data. */
-    weatherProvider: WeatherProviderShortId;
+    weatherProvider: WeatherProviderShortID;
     /** The total precipitation over the window (in millimeters). */
     precip: number;
 }
@@ -74,5 +74,16 @@ export interface ZimmermanWateringData extends BaseWateringData {
     raining: boolean;
 }
 
-export type WeatherProviderId = "OWM" | "local" | "mock" | "WUnderground";
-export type WeatherProviderShortId = "OWM" | "local" | "mock" | "WU";
+export const enum WeatherProviderID {
+	Mock = "mock",
+	Local = "local",
+	OpenWeatherMap = "OWM",
+	WUnderground = "WUnderground",
+}
+
+export const enum WeatherProviderShortID {
+	Mock = "mock",
+	Local = "local",
+	OpenWeatherMap = "OWM",
+	WUnderground = "WU",
+}

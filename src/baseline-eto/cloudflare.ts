@@ -24,7 +24,7 @@ export default class CloudflareWorkersETo extends ETo {
 
 		const version = dataView.getUint8(0)
 		if (version > ETo.MAX_VERSION) {
-			throw new EToError(`Unsupported data file version ${ version }. The maximum supported version is ${ETo.MAX_VERSION}.`)
+			throw new EToError(`Unsupported data file version ${version}. The maximum supported version is ${ETo.MAX_VERSION}.`)
 		}
 		const width = dataView.getUint32(1, false)
 		const height = dataView.getUint32(5, false)
@@ -39,7 +39,7 @@ export default class CloudflareWorkersETo extends ETo {
 			version, width, height, bitDepth, minimumETo, scalingFactor,
 			origin: {
 				x: Math.floor(width / 2),
-				y: Math.floor(height / (180 - 10 - 30) * ( 90 -10 ))
+				y: Math.floor(height / (180 - 10 - 30) * (90 - 10))
 			}
 		}
 	}
