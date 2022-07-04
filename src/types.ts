@@ -1,9 +1,6 @@
 /** Geographic coordinates. The 1st element is the latitude, and the 2nd element is the longitude. */
 export type GeoCoordinates = [number, number];
 
-/** A PWS ID and API key. */
-export type PWS = { id: string, apiKey: string };
-
 export interface TimeData {
 	/** The UTC offset, in minutes. This uses POSIX offsets, which are the negation of typically used offsets
 	 * (https://github.com/eggert/tz/blob/2017b/etcetera#L36-L42).
@@ -78,14 +75,12 @@ export const enum WeatherProviderID {
 	Mock = "mock",
 	Local = "local",
 	OpenWeatherMap = "OWM",
-	WUnderground = "WUnderground",
 }
 
 export const enum WeatherProviderShortID {
 	Mock = "mock",
 	Local = "local",
 	OpenWeatherMap = "OWM",
-	WUnderground = "WU",
 }
 
 export namespace OpenWeatherMap_OneCall_30 {

@@ -2,7 +2,6 @@ export const enum WeatherProvider {
 	//Mock = "mock",
 	//Local = "local",
 	OpenWeatherMap = "OpenWeatherMap",
-	//WUnderground = "WUnderground",
 }
 
 export const enum BaselineEToStorage {
@@ -12,7 +11,6 @@ export const enum BaselineEToStorage {
 export const enum GeocoderService {
 	OpenWeatherMap = 'OpenWeatherMap',
 	GoogleMaps = 'GoogleMaps',
-	WUnderground = 'WUnderground',
 }
 
 export const enum GeocoderCache {
@@ -32,7 +30,6 @@ export const enum WateringScaleCache {
 // Define regex filters to match against location
 export const REGEX = {
 	GPS: /^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$/,
-	PWS: /^(?:pws|icao|zmw):/,
 	TIME: /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-])(\d{2})(\d{2})/,
 	TIMEZONE: /^()()()()()()([+-])(\d{2})(\d{2})/
 }

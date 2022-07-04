@@ -1,4 +1,4 @@
-import { GeoCoordinates, PWS, WeatherData, WeatherProviderShortID, ZimmermanWateringData } from "@/types"
+import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "@/types"
 import { EToData } from "@/adjustmentMethods/EToAdjustmentMethod"
 import type { Env } from '@/bindings'
 import { WeatherProvider } from '@/constants'
@@ -7,14 +7,10 @@ export abstract class AbstractWeatherProvider {
 	/**
 	 * Retrieves weather data necessary for Zimmerman watering level calculations.
 	 * @param parameters.coordinates The coordinates to retrieve the watering data for.
-	 * @param parameters.pws The PWS to retrieve the weather from, or undefined if a PWS should not be used. If the implementation
-	 * of this method does not have PWS support, this parameter may be ignored and coordinates may be used instead.
-	 * @return A Promise that will be resolved with the ZimmermanWateringData if it is successfully retrieved,
-	 * or rejected with a CodedError if an error occurs while retrieving the {@link ZimmermanWateringData} (or the WeatherProvider
-	 * does not support this method).
+	 * @return A Promise that will be resolved with the ZimmermanWateringData if it is successfully retrieved, or rejected with a CodedError if an error occurs while retrieving the {@link ZimmermanWateringData} (or the WeatherProvider does not support this method).
 	 * @throws {CodedError}
 	 */
-	abstract getWateringData(parameters: { coordinates: GeoCoordinates, pws?: PWS }): Promise<ZimmermanWateringData>
+	abstract getWateringData(parameters: { coordinates: GeoCoordinates }): Promise<ZimmermanWateringData>
 
 	/**
 	 * Retrieves the current weather data for usage in the mobile app.

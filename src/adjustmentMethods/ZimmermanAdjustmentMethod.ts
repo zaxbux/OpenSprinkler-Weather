@@ -1,5 +1,5 @@
-import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
-import { GeoCoordinates, PWS, ZimmermanWateringData } from "@/types";
+import { AdjustmentMethod, AdjustmentMethodResponse } from "./AdjustmentMethod";
+import { GeoCoordinates, ZimmermanWateringData } from "@/types";
 import { CodedError } from "@/errors";
 import { AbstractWeatherProvider } from '@/weatherProviders';
 import { validateValues } from '@/utils';
@@ -13,10 +13,9 @@ import { ErrorCode } from '@/constants';
 async function calculateZimmermanWateringScale(
 	adjustmentOptions: ZimmermanAdjustmentOptions,
 	coordinates: GeoCoordinates,
-	weatherProvider: AbstractWeatherProvider,
-	pws?: PWS
+	weatherProvider: AbstractWeatherProvider
 ): Promise<AdjustmentMethodResponse> {
-	const wateringData: ZimmermanWateringData = await weatherProvider.getWateringData({coordinates, pws});
+	const wateringData: ZimmermanWateringData = await weatherProvider.getWateringData({coordinates});
 
 	// Temporarily disabled since OWM forecast data is checking if rain is forecasted for 3 hours in the future.
 	/*
@@ -74,7 +73,7 @@ async function calculateZimmermanWateringScale(
 	}
 }
 
-export interface ZimmermanAdjustmentOptions extends AdjustmentOptions {
+export interface ZimmermanAdjustmentOptions {
 	/** Base humidity (as a percentage). */
 	bh?: number;
 	/** Base temperature (in Fahrenheit). */

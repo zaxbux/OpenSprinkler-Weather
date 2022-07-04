@@ -1,26 +1,20 @@
-import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
+import { BaseWateringData, GeoCoordinates } from "@/types";
 import { AbstractWeatherProvider } from '@/weatherProviders';
 
 
 export interface AdjustmentMethod {
 	/**
 	 * Calculates the percentage that should be used to scale watering time.
-	 * @param adjustmentOptions The user-specified options for the calculation. No checks will be made to ensure the
-	 * AdjustmentOptions are the correct type that the function is expecting or to ensure that any of its fields are valid.
+	 * @param adjustmentOptions The user-specified options for the calculation. No checks will be made to ensure the AdjustmentOptions are the correct type that the function is expecting or to ensure that any of its fields are valid.
 	 * @param coordinates The coordinates of the watering site.
-	 * @param weatherProvider The WeatherProvider that should be used if the adjustment method needs to obtain any
-	 * weather data.
-	 * @param pws The PWS to retrieve weather data from, or undefined if a PWS should not be used. If the implementation
-	 * of this method does not have PWS support, this parameter may be ignored and coordinates may be used instead.
-	 * @return A Promise that will be resolved with the result of the calculation, or rejected with an error message if
-	 * the watering scale cannot be calculated.
+	 * @param weatherProvider The WeatherProvider that should be used if the adjustment method needs to obtain any weather data.
+	 * @return A Promise that will be resolved with the result of the calculation, or rejected with an error message if the watering scale cannot be calculated.
 	 * @throws A CodedError may be thrown if an error occurs while calculating the watering scale.
 	 */
 	calculateWateringScale(
-		adjustmentOptions: AdjustmentOptions,
+		adjustmentOptions: Record<string, any>,
 		coordinates: GeoCoordinates,
-		weatherProvider: AbstractWeatherProvider,
-		pws?: PWS
+		weatherProvider: AbstractWeatherProvider
 	): Promise< AdjustmentMethodResponse >;
 }
 
@@ -45,11 +39,4 @@ export interface AdjustmentMethodResponse {
 	rainDelay?: number;
 	/** The data that was used to calculate the watering scale, or undefined if no data was used. */
 	wateringData: BaseWateringData | undefined;
-}
-
-export interface AdjustmentOptions {
-	/** The ID of the PWS to use. */
-	pws?: string;
-	/** The API key to use to access PWS data. */
-	key?: string;
 }

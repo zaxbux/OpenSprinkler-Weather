@@ -6,7 +6,6 @@ import { GeoCoordinates } from '@/types';
 import { AbstractGeocoder } from './AbstractGeocoder';
 import GoogleMaps from './GoogleMaps';
 import OpenWeatherMap from './OpenWeatherMap';
-import WUnderground from './WUnderground';
 
 /**
  * Resolves a location description to geographic coordinates.
@@ -21,9 +20,7 @@ export async function resolveCoordinates(location: string | null, geocoder: (loc
 		throw new CodedError(ErrorCode.InvalidLocationFormat)
 	}
 
-	if (REGEX.PWS.test(location)) {
-		throw new CodedError(ErrorCode.InvalidLocationFormat)
-	} else if (REGEX.GPS.test(location)) {
+	if (REGEX.GPS.test(location)) {
 		const [lat, lon] = location.split(",")
 		return [parseFloat(lat), parseFloat(lon)]
 	} else {
@@ -36,8 +33,6 @@ export const getGeocoderProvider = async (env: Env): Promise<AbstractGeocoder> =
 	const cache = await getGeocoderCache(env)
 
 	switch (GEOCODER as string) {
-		case GeocoderService.WUnderground:
-			return new WUnderground({ cache })
 		case GeocoderService.OpenWeatherMap:
 			if (!env.OWM_API_KEY) {
 				throw new ConfigurationError(`OWM_API_KEY is undefined`)

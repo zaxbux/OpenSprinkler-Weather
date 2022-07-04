@@ -1,7 +1,7 @@
 import SunCalc from "suncalc";
 import moment from "moment";
-import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
-import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
+import { AdjustmentMethod, AdjustmentMethodResponse } from "./AdjustmentMethod";
+import { BaseWateringData, GeoCoordinates } from "@/types";
 import { CodedError } from "@/errors";
 import { AbstractWeatherProvider } from '@/weatherProviders';
 import { ErrorCode } from '@/constants';
@@ -14,14 +14,8 @@ import { ErrorCode } from '@/constants';
 async function calculateEToWateringScale(
 	adjustmentOptions: EToScalingAdjustmentOptions,
 	coordinates: GeoCoordinates,
-	weatherProvider: AbstractWeatherProvider,
-	pws?: PWS
+	weatherProvider: AbstractWeatherProvider
 ): Promise< AdjustmentMethodResponse > {
-
-	if ( pws ) {
-		throw new CodedError( ErrorCode.PwsNotSupported );
-	}
-
 	// Temporarily disabled since OWM forecast data is checking if rain is forecasted for 3 hours in the future.
 	/*
 	if ( wateringData && wateringData.raining ) {
@@ -193,7 +187,7 @@ export function approximateSolarRadiation(cloudCoverInfo: CloudCoverInfo[], coor
 	}, 0 );
 }
 
-export interface EToScalingAdjustmentOptions extends AdjustmentOptions {
+export interface EToScalingAdjustmentOptions {
 	/** The watering site's height above sea level (in feet). */
 	elevation?: number;
 	/** Baseline potential ETo (in inches per day). */

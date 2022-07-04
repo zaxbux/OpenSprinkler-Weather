@@ -1,5 +1,5 @@
 import { getAdjustmentMethod } from '@/adjustmentMethods';
-import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "@/adjustmentMethods/AdjustmentMethod";
+import { AdjustmentMethod, AdjustmentMethodResponse } from "@/adjustmentMethods/AdjustmentMethod";
 import ManualAdjustmentMethod from '@/adjustmentMethods/ManualAdjustmentMethod';
 import { Env } from '@/bindings';
 import { getWateringScaleCache } from '@/cache/wateringScale';
@@ -8,7 +8,7 @@ import { ErrorCode } from '@/constants';
 import { CodedError, makeCodedError } from "@/errors";
 import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
 import { getTimeZoneLookup } from '@/timeZoneLookup';
-import { GeoCoordinates, PWS, TimeData, WeatherData } from "@/types";
+import { GeoCoordinates, TimeData, WeatherData } from "@/types";
 import { checkWeatherRestriction, getParameter, getRemoteAddress, getTimezone, ipToInt } from '@/utils';
 import { getWeatherProvider } from '@/weatherProviders';
 import type { Request as IRequest } from 'itty-router';
@@ -96,7 +96,7 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 	let adjustmentOptionsString: string		= getParameter(url.searchParams.get('wto'))
 	const location: string | GeoCoordinates	= getParameter(url.searchParams.get('loc')),
 		outputFormat: string				= getParameter(url.searchParams.get('format'))
-	let adjustmentOptions: AdjustmentOptions;
+	let adjustmentOptions: Record<string, any>;
 	const remoteAddress = getRemoteAddress(req)
 
 
@@ -131,27 +131,7 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 
 	let timeData = await getTimeData( coordinates, env );
 
-	// Parse the PWS information.
-	let pws: PWS | undefined = undefined;
-	if ( adjustmentOptions.pws && adjustmentOptions.key ) {
-
-		const idMatch = adjustmentOptions.pws.match( /^[a-zA-Z\d]+$/ );
-		const pwsId = idMatch ? idMatch[ 0 ] : undefined;
-		const keyMatch = adjustmentOptions.key.match( /^[a-f\d]{32}$/ );
-		const apiKey = keyMatch ? keyMatch[ 0 ] : undefined;
-
-		// Make sure that the PWS ID and API key look valid.
-		if ( !pwsId ) {
-			return sendWateringError( new CodedError( ErrorCode.InvalidPwsId ), adjustmentMethod != ManualAdjustmentMethod );
-		}
-		if ( !apiKey ) {
-			return sendWateringError( new CodedError( ErrorCode.InvalidPwsApiKey ), adjustmentMethod != ManualAdjustmentMethod );
-		}
-
-		pws = { id: pwsId, apiKey: apiKey };
-	}
-
-	const weatherProvider = /*pws ? await getPWSWeatherProvider(env) :*/ await getWeatherProvider(env);
+	const weatherProvider = await getWeatherProvider(env);
 
 	const data: {
 		scale:		number | undefined,
@@ -189,9 +169,7 @@ export const getWateringData = async function(req: Request & { params: NonNullab
 		// Calculate the watering scale if it wasn't found in the cache.
 		let adjustmentMethodResponse: AdjustmentMethodResponse;
 		try {
-			adjustmentMethodResponse = await adjustmentMethod.calculateWateringScale(
-				adjustmentOptions, coordinates, weatherProvider, pws
-			);
+			adjustmentMethodResponse = await adjustmentMethod.calculateWateringScale(adjustmentOptions, coordinates, weatherProvider)
 		} catch ( err ) {
 			return sendWateringError( makeCodedError( err ), adjustmentMethod != ManualAdjustmentMethod );
 		}
