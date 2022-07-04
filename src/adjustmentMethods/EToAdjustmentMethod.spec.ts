@@ -4,7 +4,7 @@ import { GeoCoordinates } from "@/types";
 import { calculateETo, EToData } from "./EToAdjustmentMethod";
 
 
-const testData: TestData[] = require( "@/test/etoTest.json" );
+const testData: TestData[] = await import( "@/../test/etoTest.json" );
 
 describe( "ETo AdjustmentMethod", () => {
 	describe( "Should correctly calculate ETo", async () => {

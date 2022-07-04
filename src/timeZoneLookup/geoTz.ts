@@ -1,8 +1,8 @@
 import { find } from "geo-tz";
 import { GeoCoordinates } from '@/types'
-import { TimeZoneLookup } from '.';
+import { AbstractTimeZoneLookup } from './AbstractTimeZoneLookup';
 
-export class GeoTzTimeZoneLookup extends TimeZoneLookup {
+export class GeoTzTimeZoneLookup extends AbstractTimeZoneLookup {
 
 	async getTimeZoneId(coordinates: GeoCoordinates) {
 		// @todo: cache

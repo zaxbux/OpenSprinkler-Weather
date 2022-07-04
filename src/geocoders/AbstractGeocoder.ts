@@ -1,17 +1,13 @@
-import { GeoCoordinates } from "@/types";
-import { CodedError, ErrorCode } from "@/errors";
-
-export abstract class GeocoderCache {
-	public abstract has(key: string): Promise<boolean>
-	public abstract get(key: string): Promise<GeoCoordinates | undefined>
-	public abstract set(key: string, value: GeoCoordinates): Promise<void>
-}
+import { AbstractGeocoderCache } from '@/cache/geocoder/AbstractGeocoderCache';
+import { ErrorCode } from '@/constants';
+import { CodedError } from '@/errors';
+import { GeoCoordinates } from '@/types';
 
 export interface GeocoderOptions {
-	cache: GeocoderCache
+	cache: AbstractGeocoderCache
 }
 
-export abstract class Geocoder {
+export abstract class AbstractGeocoder {
 
 	private options: GeocoderOptions
 

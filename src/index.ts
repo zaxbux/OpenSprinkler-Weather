@@ -1,11 +1,8 @@
-import { RouteHandler, Router, Request as IRequest } from 'itty-router'
 import { cors } from '@/cors'
-import packageJson from '../package.json'
-
-import { getWateringData, getWeatherData } from "@/routes/weather"
 import { getBaselineETo } from "@/routes/baselineETo"
-import { Env } from './bindings'
-
+import { getWateringData, getWeatherData } from "@/routes/weather"
+import { Request as IRequest, RouteHandler, Router } from 'itty-router'
+import packageJson from '../package.json'
 
 const router = Router();
 
@@ -26,12 +23,8 @@ router.get('/weatherData', getWeatherData)
 router.options('/baselineETo', cors())
 router.get('/baselineETo', getBaselineETo)
 
-router.put('/baseline-eto', async (request: Request, env: Env) => {
-	await env.ETO_BASELINE_BUCKET.put('Baseline_ETo_Data.bin', request.body)
-})
-
 // Handle 404
-router.get('*', (request) => {
+router.get('*', () => {
 	return new Response(null, {
 		status: 404
 	})

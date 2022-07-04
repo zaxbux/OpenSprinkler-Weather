@@ -1,5 +1,5 @@
 import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
-import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
+import { AbstractWeatherProvider } from '@/weatherProviders';
 
 
 export interface AdjustmentMethod {
@@ -19,7 +19,7 @@ export interface AdjustmentMethod {
 	calculateWateringScale(
 		adjustmentOptions: AdjustmentOptions,
 		coordinates: GeoCoordinates,
-		weatherProvider: WeatherProvider,
+		weatherProvider: AbstractWeatherProvider,
 		pws?: PWS
 	): Promise< AdjustmentMethodResponse >;
 }

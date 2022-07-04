@@ -2,8 +2,9 @@ import SunCalc from "suncalc";
 import moment from "moment";
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
 import { BaseWateringData, GeoCoordinates, PWS } from "@/types";
-import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
-import { CodedError, ErrorCode } from "@/errors";
+import { CodedError } from "@/errors";
+import { AbstractWeatherProvider } from '@/weatherProviders';
+import { ErrorCode } from '@/constants';
 
 
 /**
@@ -13,7 +14,7 @@ import { CodedError, ErrorCode } from "@/errors";
 async function calculateEToWateringScale(
 	adjustmentOptions: EToScalingAdjustmentOptions,
 	coordinates: GeoCoordinates,
-	weatherProvider: WeatherProvider,
+	weatherProvider: AbstractWeatherProvider,
 	pws?: PWS
 ): Promise< AdjustmentMethodResponse > {
 
@@ -32,7 +33,7 @@ async function calculateEToWateringScale(
 	 */
 
 	// This will throw a CodedError if ETo data cannot be retrieved.
-	const etoData: EToData = await weatherProvider.getEToData( coordinates );
+	const etoData: EToData = await weatherProvider.getEToData({ coordinates });
 
 	let baseETo: number;
 	// Default elevation is based on data from https://www.pnas.org/content/95/24/14009.
@@ -81,12 +82,12 @@ async function calculateEToWateringScale(
  */
 export function calculateETo( etoData: EToData, elevation: number, coordinates: GeoCoordinates ): number {
 	// Convert to Celsius.
-	const minTemp = ( etoData.minTemp - 32 ) * 5 / 9;
-	const maxTemp = ( etoData.maxTemp - 32 ) * 5 / 9;
+	const minTemp = etoData.minTemp // ( etoData.minTemp - 32 ) * 5 / 9;
+	const maxTemp = etoData.maxTemp // ( etoData.maxTemp - 32 ) * 5 / 9;
 	// Convert to meters.
-	elevation = elevation / 3.281;
+	//elevation = elevation / 3.281;
 	// Convert to meters per second.
-	const windSpeed = etoData.windSpeed / 2.237;
+	const windSpeed = etoData.windSpeed //etoData.windSpeed / 2.237;
 	// Convert to megajoules.
 	const solarRadiation = etoData.solarRadiation * 3.6;
 

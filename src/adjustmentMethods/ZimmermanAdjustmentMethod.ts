@@ -1,8 +1,9 @@
 import { AdjustmentMethod, AdjustmentMethodResponse, AdjustmentOptions } from "./AdjustmentMethod";
 import { GeoCoordinates, PWS, ZimmermanWateringData } from "@/types";
-import { validateValues } from "@/routes/weather";
-import { WeatherProvider } from "@/routes/weatherProviders/WeatherProvider";
-import { CodedError, ErrorCode } from "@/errors";
+import { CodedError } from "@/errors";
+import { AbstractWeatherProvider } from '@/weatherProviders';
+import { validateValues } from '@/utils';
+import { ErrorCode } from '@/constants';
 
 
 /**
@@ -12,10 +13,10 @@ import { CodedError, ErrorCode } from "@/errors";
 async function calculateZimmermanWateringScale(
 	adjustmentOptions: ZimmermanAdjustmentOptions,
 	coordinates: GeoCoordinates,
-	weatherProvider: WeatherProvider,
+	weatherProvider: AbstractWeatherProvider,
 	pws?: PWS
 ): Promise<AdjustmentMethodResponse> {
-	const wateringData: ZimmermanWateringData = await weatherProvider.getWateringData(coordinates, pws);
+	const wateringData: ZimmermanWateringData = await weatherProvider.getWateringData({coordinates, pws});
 
 	// Temporarily disabled since OWM forecast data is checking if rain is forecasted for 3 hours in the future.
 	/*

@@ -1,30 +1,27 @@
-import { WeatherProviderShortID } from '@/types'
+import { BaselineEToStorage, GeocoderService, GeocoderCache, TimeZoneLookupService, WateringScaleCache, WeatherProvider } from '@/constants';
 
 export interface Env {
-  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
-  // MY_KV_NAMESPACE: KVNamespace;
-  //
-  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
-  // MY_DURABLE_OBJECT: DurableObjectNamespace;
-  //
-  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
-  ETO_BASELINE_BUCKET: R2Bucket;
+	/* Baseline ETo */
+	BASELINE_ETO: BaselineEToStorage
+	BASELINE_ETO_R2_BUCKET: R2Bucket
+	BASELINE_ETO_R2_PATH?: string
 
-  // Environment vars
-  WEATHER_PROVIDER: WeatherProviderShortID
-  PWS: string
-  PWS_WEATHER_PROVIDER: string
-  GEOCODER: string
-  GEOCODER_CACHE: string
-  GEOCODER_CACHE_KV: KVNamespace
-  OWM_API_KEY: string
-  GOOGLE_MAPS_API_KEY: string
-  LOCAL_PERSISTENCE: string
-  TIMEZONE?: string
-  TIMEZONE_LOOKUP: string
-  WATERING_SCALE_CACHE: string
+	/* Weather */
+	WEATHER_PROVIDER: WeatherProvider
+
+	/* Geocoder */
+	GEOCODER: GeocoderService
+	GEOCODER_CACHE: GeocoderCache
+	GEOCODER_CACHE_KV: KVNamespace
+
+	/* Timezone */
+	TIMEZONE_ID?: string
+	TIMEZONE_LOOKUP: TimeZoneLookupService
+
+	/* Caching */
+	WATERING_SCALE_CACHE: WateringScaleCache
+
+	/* API Keys */
+	OWM_API_KEY?: string
+	GOOGLE_MAPS_API_KEY?: string
 }
-
-/* declare global {
-
-} */

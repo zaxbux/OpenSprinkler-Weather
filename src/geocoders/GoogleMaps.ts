@@ -1,14 +1,15 @@
 import { GeoCoordinates } from "@/types";
-import { CodedError, ErrorCode } from "@/errors";
-import { httpJSONRequest } from "../weather";
-import { Geocoder, GeocoderOptions } from "./Geocoder";
+import { CodedError } from "@/errors";
+import { httpJSONRequest } from '@/http';
+import { ErrorCode } from '@/constants';
+import { AbstractGeocoder, GeocoderOptions } from './AbstractGeocoder';
 
 /**
  * Google Maps Geocoder
  *
  * Caching is disabled for this service as Google's TOS prohibit it.
  */
-export default class GoogleMaps extends Geocoder {
+export default class GoogleMaps extends AbstractGeocoder {
 	private readonly API_KEY: string;
 
 	public constructor(apiKey: string, options: GeocoderOptions) {

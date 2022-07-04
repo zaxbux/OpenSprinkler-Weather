@@ -1,7 +1,7 @@
 import { GeoCoordinates } from '@/types';
-import { GeocoderCache } from './Geocoder';
+import { AbstractGeocoderCache } from './AbstractGeocoderCache';
 
-export class CloudflareGeocoderCache extends GeocoderCache {
+export class CloudflareKV extends AbstractGeocoderCache {
 	private kv: KVNamespace;
 
 	constructor(kv: KVNamespace) {

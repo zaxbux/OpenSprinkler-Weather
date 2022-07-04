@@ -1,9 +1,13 @@
 import { GeoCoordinates } from "@/types";
-import { CodedError, ErrorCode } from "@/errors";
-import { httpJSONRequest } from "../weather";
-import { Geocoder } from "./Geocoder";
+import { CodedError } from "@/errors";
+import { httpJSONRequest } from '@/http';
+import { ErrorCode } from '@/constants';
+import { AbstractGeocoder } from './AbstractGeocoder';
 
-export default class WUnderground extends Geocoder {
+/**
+ * @deprecated
+ */
+export default class WUnderground extends AbstractGeocoder {
 	public async geocodeLocation( location: string ): Promise<GeoCoordinates> {
 		// Generate URL for autocomplete request
 		const url = "http://autocomplete.wunderground.com/aq?h=0&query=" +

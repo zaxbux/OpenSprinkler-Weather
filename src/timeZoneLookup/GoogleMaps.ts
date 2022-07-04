@@ -1,6 +1,6 @@
 import { GeoCoordinates } from '@/types';
 import moment from 'moment';
-import { TimeZoneLookup, ITimeZoneLookupOptions } from '.';
+import { AbstractTimeZoneLookup, TimeZoneLookupOptions } from './AbstractTimeZoneLookup';
 
 namespace GoogleMapsTimeZoneAPI {
 	export type TimeZoneStatus = 'OK' | 'INVALID_REQUEST' | 'OVER_DAILY_LIMIT' | 'OVER_QUERY_LIMIT' | 'REQUEST_DENIED' | 'UNKNOWN_ERROR' | 'ZERO_RESULTS'
@@ -15,13 +15,13 @@ namespace GoogleMapsTimeZoneAPI {
 	}
 }
 
-interface GoogleMapsTimezoneOptions extends ITimeZoneLookupOptions {
+interface Options extends TimeZoneLookupOptions {
 	apiKey: string
 }
 
-export class GoogleMapsTimeZoneLookup extends TimeZoneLookup<GoogleMapsTimezoneOptions> {
+export class GoogleMaps extends AbstractTimeZoneLookup<Options> {
 
-	public constructor(options: GoogleMapsTimezoneOptions) {
+	public constructor(options: Options) {
 		super(options);
 	}
 

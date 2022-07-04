@@ -23,7 +23,7 @@ export interface FileMeta {
 	};
 }
 
-export abstract class ETo {
+export abstract class AbstractBaselineETo {
 	static readonly HEADER_OFFSET = 32
 	static readonly MAX_VERSION = 1
 	FILE_META?: FileMeta
@@ -59,7 +59,7 @@ export abstract class ETo {
 		let byte: number;
 		try {
 			// Skip the 32 byte header.
-			byte = await this.getByteAtOffset(offset + ETo.HEADER_OFFSET);
+			byte = await this.getByteAtOffset(offset + AbstractBaselineETo.HEADER_OFFSET);
 		} catch (err) {
 			console.error(`An error occurred while reading the baseline ETo data file for coordinates ${coordinates}:`, err);
 			throw new EToError(`An unexpected error occurred while retrieving the baseline ETo for this location.`)

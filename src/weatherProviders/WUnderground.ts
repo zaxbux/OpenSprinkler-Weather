@@ -1,7 +1,9 @@
-import { GeoCoordinates, PWS, WeatherProviderShortID, ZimmermanWateringData } from "@/types";
-import { WeatherProvider } from "./WeatherProvider";
-import { httpJSONRequest } from "@/routes/weather";
-import { CodedError, ErrorCode } from "@/errors";
+import { GeoCoordinates, PWS, WeatherData, WeatherProviderShortID, ZimmermanWateringData } from "@/types";
+import { CodedError } from "@/errors";
+import { ErrorCode } from '@/constants';
+import { AbstractWeatherProvider } from '.';
+import { httpJSONRequest } from '@/http';
+import { EToData } from '@/adjustmentMethods/EToAdjustmentMethod';
 
 const enum Units {
 	English = 'e',
@@ -76,16 +78,19 @@ interface WUnderground_PWS_Response {
 	}[]
 }
 
-export default class WUnderground extends WeatherProvider {
+/**
+ * @deprecated
+ */
+export default class WUnderground extends AbstractWeatherProvider {
 
-	async getWateringData(coordinates: GeoCoordinates, pws: PWS | undefined): Promise<ZimmermanWateringData> {
-		if (!pws) {
+	async getWateringData(parameters: { coordinates: GeoCoordinates, pws: PWS | undefined} ): Promise<ZimmermanWateringData> {
+		if (!parameters.pws) {
 			throw new CodedError(ErrorCode.NoPwsProvided);
 		}
 
 		let data;
 		try {
-			data = await httpJSONRequest<WUnderground_PWS_Response>(`https://api.weather.com/v2/pws/observations/hourly/7day?stationId=${pws.id}&format=json&units=${Units.Metric}&apiKey=${pws.apiKey}`);
+			data = await httpJSONRequest<WUnderground_PWS_Response>(`https://api.weather.com/v2/pws/observations/hourly/7day?stationId=${parameters.pws.id}&format=json&units=${Units.Metric}&apiKey=${parameters.pws.apiKey}`);
 		} catch (err) {
 			console.error("Error retrieving weather information from WUnderground:", err);
 			throw new CodedError(ErrorCode.WeatherApiError);
@@ -115,5 +120,12 @@ export default class WUnderground extends WeatherProvider {
 			precip: totals.precip,
 			raining: samples[samples.length - 1].metric.precipRate! > 0
 		}
+	}
+
+	async getWeatherData(parameters: { coordinates: GeoCoordinates }): Promise<WeatherData> {
+		throw new Error(`Not implemented`)
+	}
+	async getEToData(parameters: { coordinates: GeoCoordinates }): Promise<EToData> {
+		throw new Error(`Not implemented`)
 	}
 }

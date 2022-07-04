@@ -1,7 +1,7 @@
 import { GeoCoordinates } from '@/types';
-import { GeocoderCache } from './Geocoder';
+import { AbstractGeocoderCache } from './AbstractGeocoderCache';
 
-export class NullGeocoderCache extends GeocoderCache {
+export class NullStore extends AbstractGeocoderCache {
 	public async has(key: string) {
 		return false
 	}

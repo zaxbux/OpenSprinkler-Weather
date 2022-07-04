@@ -1,13 +1,13 @@
 import { GeoCoordinates } from '@/types';
-import { TimeZoneLookup, ITimeZoneLookupOptions } from '.';
+import { AbstractTimeZoneLookup, TimeZoneLookupOptions } from './AbstractTimeZoneLookup';
 
-interface StaticTimezoneOptions extends ITimeZoneLookupOptions {
+interface Options extends TimeZoneLookupOptions {
 	timeZoneId: string
 }
 
-export class StaticTimeZoneLookup extends TimeZoneLookup<StaticTimezoneOptions> {
+export class Static extends AbstractTimeZoneLookup<Options> {
 
-	public constructor(options: StaticTimezoneOptions) {
+	public constructor(options: Options) {
 		super(options);
 	}
 
