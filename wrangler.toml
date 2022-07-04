@@ -2,6 +2,7 @@ name = "opensprinkler-weather"
 main = "src/index.ts"
 compatibility_date = "2022-07-02"
 workers_dev = true
+account_id = "3c60789bbe078c2b12886a2701ae72be"
 
 [vars]
 BASELINE_ETO = "CloudflareR2"
