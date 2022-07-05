@@ -1,7 +1,7 @@
 import * as moment from "moment";
 import { expect } from "chai";
 import { GeoCoordinates } from "@/types";
-import { calculateETo, EToData } from "./EToAdjustmentMethod";
+import { calculateETo, EToData } from "./ETo";
 
 
 const testData: TestData[] = await import( "@/../test/etoTest.json" );
