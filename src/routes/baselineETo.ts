@@ -1,45 +1,43 @@
-import { Env } from '@/bindings';
-import { GeoCoordinates } from '@/types';
-import { getBaselineEToData } from '@/baselineETo';
-import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
-import { AbstractBaselineETo } from '@/baselineETo/AbstractBaselineETo';
+import { getBaselineEToData } from '@/baselineETo'
+import { EToError } from '@/baselineETo/errors'
+import { ErrorCode } from '@/constants'
+import { CodedError } from '@/errors'
+import { getGeocoderProvider, resolveCoordinates } from '@/geocoders'
+import { makeErrorResponse, makeResponse } from '@/http'
+import { GeoCoordinates } from '@/types'
 
-export const getBaselineETo = async function(req: Request, env: Env): Promise<Response> {
-	const url = new URL(req.url)
-	const location = url.searchParams.get('loc')
-
-	const baselineETo: AbstractBaselineETo = await getBaselineEToData(env)
+/**
+ * Retrieves the baseline ETₒ value for a specified location.
+ */
+export const getBaselineETo = async function (req: Request, env: Env): Promise<Response> {
+	const baselineEToData = await getBaselineEToData(env)
 
 	try {
-		await baselineETo.readFileHeader()
+		await baselineEToData.readFileHeader()
 	} catch (err) {
 		// Error if the file meta was not read (either the file is still being read or an error occurred and it could not be read).
-		console.error(`An error occurred while reading the annual ETo data file header. Baseline ETo endpoint will be unavailable.`, err)
-		return new Response(`Baseline ETo calculation is currently unavailable.`, { status: 503 })
+		console.error(`An error occurred while reading the annual ETₒ data file header. Baseline ETₒ endpoint will be unavailable.`, err)
+		return makeErrorResponse(req, err, 503, `Baseline ETₒ calculation is currently unavailable.`)
 	}
 
 	// Attempt to resolve provided location to GPS coordinates.
-	let coordinates: GeoCoordinates;
+	let coordinates: GeoCoordinates
 	try {
-		coordinates = await resolveCoordinates( location, async (location) => {
-			const geocoder = await getGeocoderProvider(env)
-			return geocoder.getLocation(location);
-		});
+		coordinates = await resolveCoordinates(req, async (location) => (await getGeocoderProvider(env)).getLocation(location))
 	} catch (err) {
-		return new Response( `Error: Unable to resolve coordinates for location (${ err })`, { status: 404 })
+		if (err instanceof CodedError) {
+			// Specific error
+			return makeErrorResponse(req, err, err.errCode === ErrorCode.NoLocationFound ? 404 : 500, `Could not resolve coordinates for location.`)
+		}
+
+		// Generic error
+		return makeErrorResponse(req, `Could not resolve coordinates for location.`, 500)
 	}
 
-	let eto: number;
 	try {
-		eto = await baselineETo.calculateAverageDailyETo( coordinates );
-	} catch ( err ) {
-		/* Use a 500 error code if a more appropriate error code is not specified, and prefer the error message over the full error object if a message is defined. */
-		return new Response(err instanceof Error ? err.message : String(err), { status: 500 })
+		const eto = await baselineEToData.calculateAverageDailyETo(coordinates, 3)
+		return makeResponse(req, { eto })
+	} catch (err) {
+		return makeErrorResponse(req, err, err instanceof EToError ? err.statusCode : 500)
 	}
-
-	eto = Number.parseFloat(eto.toPrecision(3))
-
-	return new Response(JSON.stringify({
-		eto,
-	}), { headers: { 'Content-Type': 'application/json' }})
-};
+}

@@ -1,5 +1,23 @@
-import { BaseWateringData } from '@/types';
 import { REGEX } from './constants';
+
+/**
+ * Parses the weather adjustment options (`wto` request parameter).
+ */
+export function parseWaterAdjustmentOptions(adjustmentOptionsString: string | null): Record<string, any> | undefined {
+	if (adjustmentOptionsString === null) {
+		return {}
+	}
+
+	try {
+		// Parse data that may be encoded
+		adjustmentOptionsString = decodeURIComponent(adjustmentOptionsString.replace(/\\x/g, '%'))
+
+		// Reconstruct JSON string from deformed controller output
+		return JSON.parse(`{${adjustmentOptionsString}}`)
+	} catch (err) {
+		return undefined
+	}
+}
 
 export function getRemoteAddress(request: Request) {
 	let remoteAddress = getParameter(request.headers.get('x-forwarded-for')) || request.headers.get('cf-connecting-ip')!
@@ -72,34 +90,6 @@ export function getTimezone(time: number | string, useMinutes: boolean = false):
 }
 
 /**
- * Checks if the weather data meets any of the restrictions set by OpenSprinkler. Restrictions prevent any watering
- * from occurring and are similar to 0% watering level. Known restrictions are:
- *
- * - California watering restriction prevents watering if precipitation over two days is greater than 0.1" over the past
- * 48 hours.
- * @param adjustmentValue The adjustment value, which indicates which restrictions should be checked.
- * @param weather Watering data to use to determine if any restrictions apply.
- * @return A boolean indicating if the watering level should be set to 0% due to a restriction.
- */
-export function checkWeatherRestriction( adjustmentValue: number, weather: BaseWateringData ): boolean {
-
-	const californiaRestriction = ( adjustmentValue >> 7 ) & 1;
-
-	if ( californiaRestriction ) {
-
-		// TODO depending on which WeatherProvider is used, this might be checking if rain is forecasted in th next 24
-		// 	hours rather than checking if it has rained in the past 48 hours.
-		// If the California watering restriction is in use then prevent watering
-		// if more then 0.1" of rain has accumulated in the past 48 hours
-		if ( weather.precip > 0.1 ) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-/**
  * Checks if the specified object contains numeric values for each of the specified keys.
  * @param keys A list of keys to validate exist on the specified object.
  * @param obj The object to check.
@@ -126,4 +116,52 @@ export function validateValues(keys: string[], obj: Record<string, any>): boolea
 	}
 
 	return true;
+}
+
+export function shouldReturnJSON(request: Request) {
+	const accept = request.headers.get('Accept')
+	if (accept) {
+		return accept.split(',').filter(mime => {
+			return mime.includes('application/json')
+		}).length > 0
+	}
+
+	return false
+}
+
+/**
+ * Encode a dictionary using primitive URL encoding for the OpenSprinkler firmware.
+ * @param data
+ * @returns
+ */
+export function encodeWateringDataResponseData(data: Record<string, any>): string {
+	// Return the data formatted as a URL query string.
+	let encoded = ''
+	for (const key in data) {
+		// Skip inherited properties.
+		if (!data.hasOwnProperty(key)) {
+			console.debug(`Encode skip: (${key})`)
+			continue
+		}
+
+		let value = data[key]
+		if (value === undefined) {
+			// Skip undefined properties.
+			continue
+		}
+
+		if (typeof value === 'object') {
+			// Convert objects to JSON.
+			value = JSON.stringify(value)
+		}
+
+		if (typeof value === 'string') {
+			// URL encode strings. Since the OS firmware uses a primitive version of query string parsing and decoding, only some characters need to be escaped and only spaces ('+' or '%20') will be decoded.
+			value = value.replace(/ /g, '+').replace(/\n/g, '\\n').replace(/&/g, 'AMPERSAND')
+		}
+
+		encoded += `&${key}=${value}`
+	}
+
+	return encoded
 }
