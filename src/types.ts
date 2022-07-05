@@ -1,5 +1,5 @@
-/** Geographic coordinates. The 1st element is the latitude, and the 2nd element is the longitude. */
-export type GeoCoordinates = [number, number];
+/** Geographic coordinates in decimal format: `[ latitude, longitude ]` */
+export type GeoCoordinates = readonly [number, number]
 
 export interface TimeData {
 	/** The UTC offset, in minutes. This uses POSIX offsets, which are the negation of typically used offsets
@@ -52,23 +52,9 @@ export interface WeatherDataForecast {
 
 export interface BaseWateringData {
 	/** The WeatherProvider that generated this data. */
-	weatherProvider: WeatherProviderShortID;
+	//weatherProvider: WeatherProviderShortID;
 	/** The total precipitation over the window (in millimeters). */
 	precip: number;
-}
-
-/**
- * Data from a 24 hour window that is used to calculate how watering levels should be scaled. This should ideally use
- * historic data from the past day, but may also use forecasted data for the next day if historical data is not
- * available.
- */
-export interface ZimmermanWateringData extends BaseWateringData {
-	/** The average temperature over the window (in Celsius). */
-	temp: number;
-	/** The average humidity over the window (as a percentage). */
-	humidity: number;
-	/** A boolean indicating if it is raining at the time that this data was retrieved. */
-	raining: boolean;
 }
 
 export const enum WeatherProviderID {
@@ -294,5 +280,101 @@ export namespace OpenWeatherMap_OneCall_30 {
 
 		/**  National weather alerts data from major national weather warning systems */
 		alerts?: Alert[]
+	}
+}
+
+export interface OpenWeatherMap_Forecast5 {
+	/** Internal parameter */
+	//cod: number
+	/** Internal parameter */
+	//message: number
+	/** A number of timestamps returned in the API response */
+	cnt: number
+	list: {
+		/** Time of data forecasted, unix, UTC */
+		dt: number
+		main: {
+			/** Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. */
+			temp: number
+			/** This temperature parameter accounts for the human perception of weather. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. */
+			feels_like: number
+			/** Minimum temperature at the moment of calculation. This is minimal forecasted temperature (within large megalopolises and urban areas), use this parameter optionally. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. */
+			temp_min: number
+			/** Maximum temperature at the moment of calculation. This is maximal forecasted temperature (within large megalopolises and urban areas), use this parameter optionally. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. */
+			temp_max: number
+			/** Atmospheric pressure on the sea level by default, hPa */
+			pressure: number
+			/** Atmospheric pressure on the sea level, hPa */
+			sea_level: number
+			/** Atmospheric pressure on the ground level, hPa */
+			grnd_level: number
+			/** Humidity, % */
+			humidity: number
+			/** Internal parameter */
+			temp_kf: number
+		}
+
+		weather: {
+			/** Weather condition id */
+			id: number
+			/** Group of weather parameters (Rain, Snow, Extreme etc.) */
+			main: string
+			/** Weather condition within the group. You can get the output in your language. */
+			description: string
+			/** Weather icon id */
+			icon: string
+		}
+		clouds: {
+			/** Cloudiness, % */
+			all: number
+		}
+		wind: {
+			/** Wind speed. Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour. */
+			speed: number
+			/** Wind direction, degrees (meteorological) */
+			deg: number
+			/** Wind gust. Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour */
+			gust: number
+		}
+		/** Average visibility, metres. The maximum value of the visibility is 10km */
+		visibility: number
+		/** Probability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100% */
+		pop: number
+		rain?: {
+			/** Rain volume for last 3 hours, mm */
+			'3h': number
+		}
+		snow?: {
+			/** Snow volume for last 3 hours */
+			'3h': number
+		}
+		sys: {
+			/** Part of the day (n - night, d - day) */
+			pod: number
+		}
+		/** Time of data forecasted, ISO, UTC */
+		dt_txt: string
+	}[]
+	city: {
+		/** City ID */
+		id: number
+		/** City name */
+		name: string
+		coord: {
+			/** City geo location, latitude */
+			lat: number
+			/** City geo location, longitude */
+			lon: number
+		}
+		/** Country code (GB, JP etc.) */
+		country: string
+		/** population  */
+		population: number
+		/** Shift in seconds from UTC */
+		timezone: number
+		/** Sunrise time, Unix, UTC */
+		sunrise: number
+		/** Sunset time, Unix, UTC */
+		sunset: number
 	}
 }

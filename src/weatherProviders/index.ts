@@ -1,16 +1,35 @@
-import { GeoCoordinates, WeatherData, ZimmermanWateringData } from "@/types"
-import { EToData } from "@/adjustmentMethods/EToAdjustmentMethod"
-import type { Env } from '@/bindings'
+import { EToData } from "@/adjustmentMethods/ETo"
+import { ZimmermanWateringData } from '@/adjustmentMethods/Zimmerman'
 import { WeatherProvider } from '@/constants'
+import { GeoCoordinates, TimeData, WeatherProviderShortID } from "@/types"
+import { IWeatherData } from './types'
+
+export interface WateringData {
+	weatherProvider: WeatherProviderShortID
+	timezone: number
+	sunrise: number
+	sunset: number
+	data: ZimmermanWateringData
+	location: GeoCoordinates
+}
+
+export interface WeatherData {
+	timezone: number
+	sunrise: number
+	sunset: number
+	data: IWeatherData
+	location: GeoCoordinates
+}
 
 export abstract class AbstractWeatherProvider {
+	public abstract getID(): string
 	/**
 	 * Retrieves weather data necessary for Zimmerman watering level calculations.
 	 * @param parameters.coordinates The coordinates to retrieve the watering data for.
 	 * @return A Promise that will be resolved with the ZimmermanWateringData if it is successfully retrieved, or rejected with a CodedError if an error occurs while retrieving the {@link ZimmermanWateringData} (or the WeatherProvider does not support this method).
 	 * @throws {CodedError}
 	 */
-	abstract getWateringData(parameters: { coordinates: GeoCoordinates }): Promise<ZimmermanWateringData>
+	public abstract getWateringData(parameters: { coordinates: GeoCoordinates }): Promise<WateringData>
 
 	/**
 	 * Retrieves the current weather data for usage in the mobile app.
@@ -19,7 +38,7 @@ export abstract class AbstractWeatherProvider {
 	 * or rejected with an error message if an error occurs while retrieving the WeatherData or the WeatherProvider does
 	 * not support this method.
 	 */
-	abstract getWeatherData(parameters: { coordinates: GeoCoordinates }): Promise<WeatherData>
+	public abstract getWeatherData(parameters: { coordinates: GeoCoordinates, [key: string]: any }): Promise<WeatherData>
 
 	/**
 	 * Retrieves the data necessary for calculating potential ETo.
@@ -27,12 +46,18 @@ export abstract class AbstractWeatherProvider {
 	 * @return A Promise that will be resolved with the {@link EToData} if it is successfully retrieved, or rejected with a
 	 * CodedError if an error occurs while retrieving the EToData (or the WeatherProvider does not support this method).
 	 */
-	abstract getEToData(parameters: { coordinates: GeoCoordinates }): Promise<EToData>
+	public abstract getEToData(parameters: { coordinates: GeoCoordinates }): Promise<EToData>
 
 	/**
-	 * Returns a boolean indicating if watering scales calculated using data from this WeatherProvider should be cached
-	 * until the end of the day in timezone the data was for.
-	 * @return a boolean indicating if watering scales calculated using data from this WeatherProvider should be cached.
+	 * Calculates timezone and sunrise/sunset for the specified coordinates.
+	 * @param coordinates The coordinates to use to calculate time data.
+	 * @return The TimeData for the specified coordinates.
+	 */
+	public abstract getTimeData(coordinates: GeoCoordinates, env: Env): Promise<TimeData>
+
+	/**
+	 * Indicates if a watering scale calculated using data from this WeatherProvider should be cached.
+	 * The watering scale will be cached until the end of the day in timezone the data was for.
 	 */
 	public shouldCacheWateringScale(): boolean {
 		return false
