@@ -1,4 +1,3 @@
-import { Env } from '@/bindings';
 import { getGeocoderCache } from '@/cache/geocoder';
 import { ErrorCode, GeocoderService, REGEX } from '@/constants';
 import { CodedError, ConfigurationError } from '@/errors';
@@ -7,6 +6,9 @@ import { AbstractGeocoder } from './AbstractGeocoder';
 import GoogleMaps from './GoogleMaps';
 import OpenWeatherMap from './OpenWeatherMap';
 
+type RawLocation = Request | URL | URLSearchParams | string | null
+type GeocoderFn = (location: string) => Promise<GeoCoordinates>
+
 /**
  * Resolves a location description to geographic coordinates.
  * @param location A partial zip/city/country or a coordinate pair.
@@ -14,20 +16,39 @@ import OpenWeatherMap from './OpenWeatherMap';
  * rejected with a CodedError if unable to resolve the location.
  * @throws {CodedError}
  */
-export async function resolveCoordinates(location: string | null, geocoder: (location: string) => Promise<GeoCoordinates>): Promise<GeoCoordinates> {
+export async function resolveCoordinates(location: RawLocation, geocoder: GeocoderFn): Promise<GeoCoordinates> {
+	if (location instanceof Request) {
+		location = new URL(location.url)
+	}
+
+	if (location instanceof URL) {
+		location = location.searchParams
+	}
+
+	if (location instanceof URLSearchParams) {
+		location = location.get('loc')
+	}
 
 	if (!location) {
 		throw new CodedError(ErrorCode.InvalidLocationFormat)
 	}
 
+	// Convert coordinates string to tuple
 	if (REGEX.GPS.test(location)) {
 		const [lat, lon] = location.split(",")
-		return [parseFloat(lat), parseFloat(lon)]
-	} else {
-		return geocoder(location)
+		return Object.freeze([parseFloat(lat), parseFloat(lon)]) as readonly [number, number]
 	}
+
+	// Fetch coordinates from geocoding service
+	return geocoder(location)
 }
 
+/**
+ * Return an instance of the configured Geocoder Provider.
+ * @param env
+ * @returns
+ * @throws {ConfigurationError}
+ */
 export const getGeocoderProvider = async (env: Env): Promise<AbstractGeocoder> => {
 	const { GEOCODER } = env
 	const cache = await getGeocoderCache(env)

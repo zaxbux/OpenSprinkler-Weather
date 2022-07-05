@@ -15,9 +15,6 @@ export default class GoogleMaps extends AbstractGeocoder {
 	public constructor(apiKey: string, options: GeocoderOptions) {
 		super(options);
 		this.API_KEY = apiKey;
-		if (!this.API_KEY) {
-			throw "GOOGLE_MAPS_API_KEY environment variable is not defined.";
-		}
 	}
 
 	public async geocodeLocation(location: string): Promise<GeoCoordinates> {
