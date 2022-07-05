@@ -1,4 +1,3 @@
-import { Env } from '@/bindings';
 import { TimeZoneLookupService } from '@/constants';
 import { ConfigurationError } from '@/errors';
 import { AbstractTimeZoneLookup } from './AbstractTimeZoneLookup';
@@ -6,6 +5,12 @@ import { GoogleMaps } from './GoogleMaps';
 import { OpenWeatherMap } from './OpenWeatherMap';
 import { Static } from './Static';
 
+/**
+ * @returns An instance of the configured Time Zone Lookup Provider.
+ *
+ * @throws {@link ConfigurationError}
+ * This exception is thrown if the configuration is invalid.
+ */
 export const getTimeZoneLookup = async (env: Env): Promise<AbstractTimeZoneLookup> => {
 	const { TIMEZONE_LOOKUP } = env
 	switch (TIMEZONE_LOOKUP as string) {
@@ -25,5 +30,5 @@ export const getTimeZoneLookup = async (env: Env): Promise<AbstractTimeZoneLooku
 		return new Static({ timeZoneId: env.TIMEZONE_ID })
 	}
 
-	throw new Error(`Unknown timezone lookup (${env.TIMEZONE_LOOKUP})`)
+	throw new ConfigurationError(`Unknown timezone lookup (${env.TIMEZONE_LOOKUP})`)
 }

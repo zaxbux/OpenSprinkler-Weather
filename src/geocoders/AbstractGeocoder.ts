@@ -17,14 +17,17 @@ export abstract class AbstractGeocoder {
 
 	/**
 	 * Converts a location name to geographic coordinates.
+	 *
 	 * @param location A location name.
-	 * @return A Promise that will be resolved with the GeoCoordinates of the specified location, or rejected with a
-	 * CodedError.
+	 * @return The {@link GeoCoordinates} of the specified location.
+	 *
+	 * @throws {CodedError}
 	 */
 	protected abstract geocodeLocation(location: string): Promise<GeoCoordinates>;
 
 	/**
 	 * Converts a location name to geographic coordinates, first checking the cache and updating it if necessary.
+	 * @throws {CodedError}
 	 */
 	public async getLocation(location: string): Promise<GeoCoordinates> {
 		if (this.enableCache() && this.options.cache.has(location)) {
