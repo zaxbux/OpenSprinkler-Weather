@@ -2,21 +2,25 @@
  * @fileoverview Fetch baseline evapotranspiration (ETo) data from Cloudflare R2.
  */
 
-import { AbstractBaselineETo, EToDataUnavailableError, EToError } from './AbstractBaselineETo'
+import { AbstractBaselineETo } from './AbstractBaselineETo'
+import { EToDataUnavailableError, EToError } from './errors'
 
+/**
+ *
+ */
 export default class CloudflareR2 extends AbstractBaselineETo {
 	protected static FILE = 'Baseline_ETo_Data.bin'
-	readonly #bucket: R2Bucket
-	readonly #path: string
+	private readonly bucket: R2Bucket
+	private readonly path: string
 
 	constructor(bucket: R2Bucket, path?: string) {
 		super()
-		this.#bucket = bucket
-		this.#path = path ?? ''
+		this.bucket = bucket
+		this.path = path ?? ''
 	}
 
 	async readFileHeader() {
-		const header = await this.#bucket.get(this.getR2Key(), {
+		const header = await this.bucket.get(this.getR2Key(), {
 			range: {
 				offset: 0,
 				length: AbstractBaselineETo.HEADER_OFFSET
@@ -24,7 +28,7 @@ export default class CloudflareR2 extends AbstractBaselineETo {
 		}) as R2ObjectBody | null
 
 		if (!header) {
-			throw new EToDataUnavailableError(`Data file not found (${this.getR2Key()}).`)
+			throw new EToDataUnavailableError(`Data file not found (${this.getR2Key()}).`, { statusCode: 503 })
 		}
 
 		const dataView = new DataView(await header.arrayBuffer())
@@ -42,7 +46,7 @@ export default class CloudflareR2 extends AbstractBaselineETo {
 		const minimumETo = dataView.getFloat32(10, false)
 		const scalingFactor = dataView.getFloat32(14, false)
 
-		this.FILE_META = {
+		this.fileMetadata = {
 			version, width, height, bitDepth, minimumETo, scalingFactor,
 			origin: {
 				x: Math.floor(width / 2),
@@ -51,18 +55,18 @@ export default class CloudflareR2 extends AbstractBaselineETo {
 		}
 	}
 
-	async getByteAtOffset(offset: number) {
-		const byte = await this.#bucket.get(this.getR2Key(), {
+	async getByteAtOffset(offset: number, relative: boolean) {
+		const data = await this.bucket.get(this.getR2Key(), {
 			range: {
-				offset,
+				offset: offset + (relative ? AbstractBaselineETo.HEADER_OFFSET : 0),
 				length: 1,
 			}
 		}) as R2ObjectBody
 
-		return byte.body.getReader().read().then(result => result.value)
+		return data.body.getReader().read().then(result => result.value)
 	}
 
 	private getR2Key() {
-		return `${this.#path}${CloudflareR2.FILE}`
+		return `${this.path}${CloudflareR2.FILE}`
 	}
 }

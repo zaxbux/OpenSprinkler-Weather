@@ -1,13 +1,13 @@
-# Baseline ETo Data
+# Baseline ETₒ Data
 
-The baseline ETo endpoint determines the baseline ETo for a location by reading a file generated using data from [MOD16](https://www.ntsg.umt.edu/project/modis/mod16.php).
+The baseline ETₒ endpoint determines the baseline ETₒ for a location by reading a file generated using data from [MOD16](https://www.ntsg.umt.edu/project/modis/mod16.php).
 The data is stored in a binary file that has 4 key differences from the GeoTIFF provided by MOD16:
 * The bit depth is decreased from 16 bits to 8 bits to reduce the file size.
 * Missing data is interpolated using the values of surrounding pixels.
 The MOD16 dataset does not contain data for locations that don't have vegetated land cover (such as urban environments), which can be problematic since many users may set their location to nearby cities.
 * The data is stored in an uncompressed format so that geographic coordinates can be mapped to the offset of the corresponding pixel in the file.
 This means the file can be stored on disk instead of memory, and the pixel for a specified location can be quickly accessed by seeking to the calculated offset in the file.
-* A metadata header that contains parameters about the data used to create the file (such as the image dimensions and instructions on how to map a pixel value to an annual ETo value) is added to the beginning of the file.
+* A metadata header that contains parameters about the data used to create the file (such as the image dimensions and instructions on how to map a pixel value to an annual ETₒ value) is added to the beginning of the file.
 This header enables the weather server to use datafiles generated from future versions of the MOD16 dataset (even if these versions modify some of these parameters).
 
 The datafile is to be stored as `baselineEToData/Baseline_ETo_Data.bin`.
@@ -42,12 +42,12 @@ The data will be saved in a binary format beginning with the a 32 byte big-endia
 | 1-4 | uint32 | Image width (in pixels) |
 | 5-8 | uint32 | Image height (in pixels) |
 | 9 | uint8 | Pixel bit depth (the only bit depth currently supported is 8) |
-| 10-13 | float | Minimum ETo |
+| 10-13 | float | Minimum ETₒ |
 | 14-17 | float | Scaling factor |
 | 18-32 | N/A | May be used in future versions |
 
 The header is immediately followed by a `IMAGE_WIDTH * IMAGE_HEIGHT` bytes of data corresponding to the pixels in the image in row-major order.
-Each pixel is interpreted as an 8 bit unsigned integer, and the average annual potential ETo at that location is `PIXEL * SCALING_FACTOR + MINIMUM_ETO` inches/year.
+Each pixel is interpreted as an 8 bit unsigned integer, and the average annual potential ETₒ at that location is `PIXEL * SCALING_FACTOR + MINIMUM_ETO` inches/year.
 A value of `255` is special and indicates that no data is available for that location.
 
 ## Notes
