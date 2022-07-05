@@ -1,20 +1,23 @@
-import { AdjustmentOptions } from '@/adjustmentMethods/AdjustmentMethod';
+//import { AdjustmentOptions } from '@/adjustmentMethods/AdjustmentMethod';
 import { AbstractTimeZoneLookup } from '@/timeZoneLookup/AbstractTimeZoneLookup';
 import { GeoCoordinates } from '@/types';
+import { IWateringData } from '@/weatherProviders/types';
 
-export interface CachedScale {
+/* export interface CachedScale {
 	scale: number;
 	rawData: object;
 	rainDelay: number;
-}
+} */
 
-export interface CachedScaleHash {
+export type CachedWateringScale = Pick<IWateringData, 'scale' | 'rainDelay' | 'rawData'>
+
+export interface CachedWateringScaleHashParameters {
 	/** The ID of the AdjustmentMethod used to calculate this watering scale. This value should have the appropriate bits set for any restrictions that were used. */
-	adjustmentMethodId: number
+	method: number
 	/** The coordinates the watering scale was calculated for. */
 	coordinates: GeoCoordinates
 	/** Any user-specified adjustment options that were used when calculating the watering scale. */
-	adjustmentOptions: AdjustmentOptions
+	adjustmentOptions: Record<string, any>
 }
 
 export interface WateringScaleCacheOptions {
@@ -35,12 +38,12 @@ export abstract class AbstractWateringScaleCache<O extends WateringScaleCacheOpt
 	 * @param hash The parameters to used to key the result.
 	 * @param wateringScale The results of the watering scale calculation.
 	 */
-	public abstract put(hash: CachedScaleHash, wateringScale: CachedScale): Promise<void>
+	public abstract put(hash: CachedWateringScaleHashParameters, wateringScale: CachedWateringScale): Promise<void>
 
 	/**
 	 * Retrieves a cached scale that was previously calculated with the given parameters.
 	 * @param hash The parameters to used to key the result.
 	 * @return The cached result of the watering scale calculation, or undefined if no values were cached.
 	 */
-	public abstract get(hash: CachedScaleHash): Promise<CachedScale | undefined>
+	public abstract get(hash: CachedWateringScaleHashParameters): Promise<CachedWateringScale | undefined>
 }

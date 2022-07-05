@@ -1,13 +1,15 @@
-import { Env } from '@/bindings';
 import { WateringScaleCache } from '@/constants';
 import { getTimeZoneLookup } from '@/timeZoneLookup';
 import { AbstractWateringScaleCache } from './AbstractWateringScaleCache';
 import { CloudflareCache } from './CloudflareCache';
 
-
-
-export const getWateringScaleCache = async (env: Env): Promise<AbstractWateringScaleCache> => {
+export const getWateringScaleCache = async (env: Env): Promise<AbstractWateringScaleCache | void> => {
 	const { WATERING_SCALE_CACHE } = env
+
+	if (!WATERING_SCALE_CACHE) {
+		return
+	}
+
 	const timeZoneLookup = await getTimeZoneLookup(env)
 
 	switch (WATERING_SCALE_CACHE as string) {
@@ -15,5 +17,5 @@ export const getWateringScaleCache = async (env: Env): Promise<AbstractWateringS
 			return new CloudflareCache({ timeZoneLookup })
 	}
 
-	throw new Error(`Unknown watering scale cache (${WATERING_SCALE_CACHE})`)
+	//throw new Error(`Unknown watering scale cache (${WATERING_SCALE_CACHE})`)
 }
