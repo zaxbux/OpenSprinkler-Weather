@@ -53,5 +53,5 @@ export function makeErrorResponse(original: Request, err: unknown, status: numbe
 		code: err instanceof CodedError ? err.errCode : null,
 	}
 
-	return makeResponse(original, useJSON ? JSON.stringify(response) : `Error: ${response.error}`, { status })
+	return makeResponse(original, useJSON ? response : `Error: ${response.error}`, { status })
 }
