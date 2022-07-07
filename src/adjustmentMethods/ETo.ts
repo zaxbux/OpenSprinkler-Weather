@@ -55,7 +55,7 @@ export class ETo extends AbstractAdjustmentMethod {
 
 		let baseETo: number;
 		// Default elevation is based on data from https://www.pnas.org/content/95/24/14009.
-		let elevation = 600;
+		const elevation = adjustmentOptions.elevation || 194;
 
 		if (adjustmentOptions && "baseETo" in adjustmentOptions && adjustmentOptions.baseETo) {
 			baseETo = adjustmentOptions.baseETo
