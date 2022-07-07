@@ -1,8 +1,8 @@
 {
-	"name": "os-weather-service",
+	"name": "@zaxbux/os-weather-service",
 	"description": "OpenSprinkler Weather Service",
 	"version": "3.0.0-alpha",
-	"repository": "https://github.com/OpenSprinkler/Weather-Weather",
+	"repository": "https://github.com/zaxbux/OpenSprinkler-Weather",
 	"scripts": {
 		"dev": "wrangler dev",
 		"deploy": "wrangler publish"

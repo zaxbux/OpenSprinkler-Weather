@@ -1,4 +1,5 @@
 import { CodedError } from '@/errors';
+import packageJson from '@/../package.json'
 
 /**
  * Makes an HTTP/HTTPS GET request to the specified URL and returns the response body.
@@ -8,7 +9,7 @@ import { CodedError } from '@/errors';
  * request or, response including API keys and other sensitive information.
  */
 async function httpRequest(url: string): Promise<string> {
-	const response = await fetch(url)
+	const response = await fetch(url, { headers: { 'User-Agent': `${packageJson.name}/${packageJson.version}` }})
 
 	if (response.status !== 200) {
 		throw new Error(`Received ${response.status} status code for URL '${url}'.`)
