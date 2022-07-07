@@ -2,6 +2,8 @@ import { BaselineEToStorage, GeocoderService, GeocoderCache, TimeZoneLookupServi
 
 declare global {
 	export interface Env {
+		CORS_ORIGINS?: string
+
 		/* Baseline ETₒ */
 		BASELINE_ETO: BaselineEToStorage
 		BASELINE_ETO_R2_BUCKET: R2Bucket

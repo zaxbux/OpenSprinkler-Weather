@@ -6,8 +6,8 @@ import packageJson from '../package.json'
 
 const router = Router();
 
-// Handle requests to apex. Return 503 status to keep crawlers away.
-router.get('/', () => new Response(`${packageJson.description} v${packageJson.version}`, { status: 503 }))
+// Handle requests to apex. Return 501 status to keep crawlers away.
+router.get('/', () => new Response(`${packageJson.description} v${packageJson.version}\n<${packageJson.repository}>`, { status: 501, headers: { 'Content-Type': 'text/plain' } }))
 
 router.routes.push([
 	'GET',
@@ -15,16 +15,16 @@ router.routes.push([
 	[getWateringData as RouteHandler<IRequest>]
 ])
 
-// This route is for the GUI
-router.options('/weatherData', cors())
-router.get('/weatherData', getWeatherData)
+const origin = async (origin: string, env: Env) => (env.CORS_ORIGINS?.split(',') || '*')
 
 // This route is for the GUI
-router.options('/baselineETo', cors())
-router.get('/baselineETo', getBaselineETo)
+router.all('/weatherData', cors(getWeatherData, { origin, methods: ['GET'] }))
+
+// This route is for the GUI
+router.all('/baselineETo', cors(getBaselineETo, { origin, methods: ['GET'] }))
 
 // Handle 404
-router.get('*', () => {
+router.all('*', () => {
 	return new Response(null, {
 		status: 404
 	})
