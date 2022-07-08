@@ -1,5 +1,4 @@
-import { AbstractWeatherProvider } from '@/weatherProviders';
-import { IWateringData } from '@/weatherProviders/types';
+import { AbstractWeatherProvider, WateringData } from '@/weatherProviders';
 import { AbstractAdjustmentMethod } from './AbstractAdjustmentMethod';
 import { ETo } from "./ETo";
 import { Manual } from "./Manual";
@@ -7,10 +6,7 @@ import { RainDelay } from "./RainDelay";
 import { WateringRestrictions } from './WateringRestrictions';
 import { Zimmerman } from "./Zimmerman";
 
-export interface AdjustmentMethodWateringData extends Partial<IWateringData> {
-	/** Total precipitation over the window period (millimeters) */
-	precip: number
-}
+export interface AdjustmentMethodWateringData extends Partial<WateringData> {}
 
 /**
  *

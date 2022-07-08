@@ -1,5 +1,37 @@
+import { WeatherForecastDaily } from './weatherProviders/types'
+
 /** Geographic coordinates in decimal format: `[ latitude, longitude ]` */
 export type GeoCoordinates = readonly [number, number]
+
+
+/**
+ * Required properties for a response to the weatherData endpoint.
+ */
+export interface WeatherDataResponse {
+	timezone: number
+	sunrise: number
+	sunset: number
+	weatherProvider: WeatherProviderID,
+	temp: number
+	icon: string
+	description: string
+	forecast: WeatherForecastDaily[]
+	location: GeoCoordinates
+}
+
+/**
+ * Required parameters for a response to the wateringData endpoint.
+ */
+export interface WateringDataResponse {
+	errCode: number
+	scale?: number
+	sunrise?: number
+	sunset?: number
+	eip?: number
+	tz?: number
+	rd?: number
+	rawData?: Record<string, string | number | object | undefined>
+}
 
 export interface TimeData {
 	/** The UTC offset, in minutes. This uses POSIX offsets, which are the negation of typically used offsets
@@ -48,13 +80,6 @@ export interface WeatherDataForecast {
 	icon: string;
 	/** A human-readable description of the weather. */
 	description: string;
-}
-
-export interface BaseWateringData {
-	/** The WeatherProvider that generated this data. */
-	//weatherProvider: WeatherProviderShortID;
-	/** The total precipitation over the window (in millimeters). */
-	precip: number;
 }
 
 export const enum WeatherProviderID {

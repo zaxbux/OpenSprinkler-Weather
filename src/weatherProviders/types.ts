@@ -26,7 +26,7 @@ export interface IWeatherData {
 	description: string
 	forecast: WeatherForecastDaily[]
 
-	// The following are currently unused.
+	// The following are currently unused by the web app, but could be used by some backend functions.
 
 	humidity: undefined
 	wind: undefined

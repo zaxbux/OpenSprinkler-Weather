@@ -27,7 +27,7 @@ export const getBaselineETo = async function (req: Request, env: Env): Promise<R
 	} catch (err) {
 		if (err instanceof CodedError) {
 			// Specific error
-			return makeErrorResponse(req, err, err.errCode === ErrorCode.NoLocationFound ? 404 : 500, `Could not resolve coordinates for location.`)
+			return makeErrorResponse(req, err, err.errCode === ErrorCode.NoLocationFound ? 404 : 400, `Could not resolve coordinates for location.`)
 		}
 
 		// Generic error

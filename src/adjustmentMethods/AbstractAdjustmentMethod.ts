@@ -4,9 +4,7 @@ import { IWateringData } from '@/weatherProviders/types';
 import { AdjustmentMethodWateringData } from '.';
 import { WateringRestrictions } from './WateringRestrictions';
 
-export interface AdjustmentMethodOptions extends Record<string, any> {
-	//checkRestrictions: boolean
-}
+export interface AdjustmentMethodOptions extends Record<string, any> {}
 
 export interface AbstractAdjustmentMethodOptions {
 	/** The WeatherProvider that should be used if the adjustment method needs to obtain any weather data. */
@@ -15,7 +13,7 @@ export interface AbstractAdjustmentMethodOptions {
 	wateringRestrictions: WateringRestrictions
 }
 
-export abstract class AbstractAdjustmentMethod {
+export abstract class AbstractAdjustmentMethod<T = AdjustmentMethodOptions> {
 	protected weatherProvider: AbstractWeatherProvider
 	protected wateringRestrictions: WateringRestrictions
 
@@ -24,7 +22,7 @@ export abstract class AbstractAdjustmentMethod {
 		this.wateringRestrictions = options.wateringRestrictions
 	}
 
-	public async getAdjustment(adjustmentOptions: AdjustmentMethodOptions, coordinates: GeoCoordinates): Promise<AdjustmentMethodResponse> {
+	public async getAdjustment(adjustmentOptions: T, coordinates: GeoCoordinates): Promise<AdjustmentMethodResponse> {
 		const response = await this.calculateWateringScale(adjustmentOptions, coordinates)
 		return this.applyRestrictions(coordinates, response)
 	}
@@ -37,7 +35,7 @@ export abstract class AbstractAdjustmentMethod {
 	 * @throws A CodedError may be thrown if an error occurs while calculating the watering scale.
 	 */
 	protected abstract calculateWateringScale(
-		adjustmentOptions: AdjustmentMethodOptions,
+		adjustmentOptions: T,
 		coordinates: GeoCoordinates
 	): Promise<AdjustmentMethodResponse>
 
@@ -46,7 +44,7 @@ export abstract class AbstractAdjustmentMethod {
 			let wateringData = adjustmentMethodResponse.wateringData;
 			// Fetch the watering data if the AdjustmentMethod didn't fetch it and restrictions are being checked.
 			if (!wateringData) {
-				wateringData = (await this.weatherProvider.getWateringData({ coordinates })).data;
+				wateringData = (await this.weatherProvider.getWateringData({ coordinates }));
 			}
 
 			// Check for any user-set restrictions and change the scale to 0 if the criteria is met
@@ -82,9 +80,11 @@ export abstract class AbstractAdjustmentMethod {
 // 	wateringData: BaseWateringData | undefined;
 // }
 
-export interface AdjustmentMethodResponse extends Pick<IWateringData, 'scale' | 'rainDelay' | 'rawData'> {
+export interface AdjustmentMethodResponse<R extends Record<string, any> = Record<string, any>> extends Pick<IWateringData, 'scale' | 'rainDelay' | 'rawData'> {
 	/**
 	 * The data that was used to calculate the watering scale or if no data was used, undefined.
 	 */
 	wateringData?: AdjustmentMethodWateringData
+
+	rawData: R
 }

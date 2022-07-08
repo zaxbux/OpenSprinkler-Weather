@@ -5,7 +5,7 @@ import { ErrorCode } from '@/constants';
 import { CodedError, makeCodedError } from "@/errors";
 import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
 import { makeResponse, makeErrorResponse } from '@/http';
-import { GeoCoordinates } from "@/types";
+import { GeoCoordinates, WateringDataResponse, WeatherDataResponse } from "@/types";
 import { encodeWateringDataResponseData, getRemoteAddress, getTimezone, ipToInt, parseWaterAdjustmentOptions, shouldReturnJSON } from '@/utils';
 import { getWeatherProvider } from '@/weatherProviders';
 import { IWateringData } from '@/weatherProviders/types';
@@ -31,13 +31,15 @@ export const getWeatherData = async function (req: Request, env: Env): Promise<R
 		const weatherData = await weatherProvider.getWeatherData({ coordinates, env });
 
 		// @todo: caching headers
-		return makeResponse(req, {
+		const response: WeatherDataResponse = {
 			timezone: weatherData.timezone,
 			sunrise: weatherData.sunrise,
 			sunset: weatherData.sunset,
 			...weatherData.data,
 			location: weatherData.location,
-		})
+		}
+
+		return makeResponse(req, response)
 	} catch (err) {
 		return makeErrorResponse(req, err, 400)
 	}
@@ -79,7 +81,12 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 
 
 	const wateringScaleCache = await getWateringScaleCache(env)
-	const timeData = await weatherProvider.getTimeData(coordinates, env)
+	//const timeData = await weatherProvider.getTimeData(coordinates, env)
+	const timeData = {
+		timezone: -420,
+		sunrise: 500,
+		sunset: 1200
+	}
 	const cachedScale = wateringScaleCache ? await wateringScaleCache.get({ method, coordinates, adjustmentOptions }) : undefined
 
 	if (cachedScale && weatherProvider.shouldCacheWateringScale()) {
@@ -95,7 +102,7 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 	}
 
 	// Calculate the watering scale if it wasn't found in the cache.
-	let adjustmentMethodResponse: AdjustmentMethodResponse;
+	let adjustmentMethodResponse: AdjustmentMethodResponse
 	try {
 		adjustmentMethodResponse = await adjustmentMethod.getAdjustment(adjustmentOptions, coordinates)
 	} catch (err) {
@@ -115,11 +122,8 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 
 	// Cache the watering scale if caching is enabled and no error occurred.
 	if (wateringScaleCache && weatherProvider.shouldCacheWateringScale()) {
-		wateringScaleCache!.put({ method, coordinates, adjustmentOptions }, {
-			scale: data.scale!,
-			rawData: data.rawData,
-			rainDelay: data.rainDelay!,
-		});
+		//const { scale, rainDelay, rawData } = data
+		wateringScaleCache!.put({ method, coordinates, adjustmentOptions }, data);
 	}
 
 	return makeWateringDataResponse(data, req)
@@ -147,7 +151,7 @@ function makeWateringErrorResponse(error: CodedError, request: Request) {
  */
 function makeWateringDataResponse(wateringData: IWateringData, request: Request) {
 	// Object consisting only of parameters that the firmware will parse.
-	const data = {
+	const response: WateringDataResponse = {
 		errCode: wateringData.errorCode,
 		scale: wateringData.scale,
 		sunrise: wateringData.sunrise,
@@ -158,7 +162,7 @@ function makeWateringDataResponse(wateringData: IWateringData, request: Request)
 		rawData: wateringData.rawData,
 	}
 
-	return makeControllerResponse(data, request)
+	return makeControllerResponse(response as Record<string, any>, request)
 }
 
 /**
