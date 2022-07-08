@@ -14,9 +14,10 @@ GEOCODER_CACHE = "NullStore"
 TIMEZONE_ID = "Etc/GMT"
 #TIMEZONE_ID = "America/Vancouver"
 TIMEZONE_LOOKUP = "OpenWeatherMap"
-WATERING_SCALE_CACHE = "CloudflareCache"
+#WATERING_SCALE_CACHE = "CloudflareCache"
 #OWM_API_KEY = ""
 #GOOGLE_MAPS_API_KEY = ""
+CORS_ORIGINS = "https://example.com"
 
 [[r2_buckets]]
 binding = 'BASELINE_ETO_R2_BUCKET'
