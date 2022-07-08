@@ -23,3 +23,16 @@ without installing any prerequisites or setting up systemd.
 ./build-docker.sh  # run with -h for other options
 ```
 The above will generate baselineEtoData (if not already done) and then build a complete opensprinkler-weather docker image.
+
+---
+
+## Changes
+
+* Weather is fetched with metric/SI units.
+* Calculations are done using metric/SI units.
+* Data is returned in metric/SI units.
+* Personal/Private Weather Station support removed.
+* Weather Underground API removed.
+* DarkSky API removed (deprecated by Apple's WeatherKit).
+* Requests to `/:adjustmentMethod` will return JSON when the `Accept` header includes `application/json`, the `format` parameter is not used.
+* Error code responses will not include the `scale` parameter. Starting with firmware version 2.1.9 (commit 7e8e2e14115ea3a169ccccba57c7c20745469a58), this parameter is ignored if the error code is non-zero.
