@@ -2,7 +2,7 @@ import { getAdjustmentMethod } from '@/adjustmentMethods';
 import { AdjustmentMethodResponse } from "@/adjustmentMethods/AbstractAdjustmentMethod";
 import { getWateringScaleCache } from '@/cache/wateringScale';
 import { ErrorCode } from '@/constants';
-import { CodedError, makeCodedError } from "@/errors";
+import { CodedError, InvalidAdjustmentMethodError, makeCodedError, MalformedAdjustmentOptionsError } from "@/errors";
 import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
 import { makeResponse, makeErrorResponse } from '@/http';
 import { GeoCoordinates, WateringDataResponse, WeatherDataResponse } from "@/types";
@@ -60,7 +60,7 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 	const adjustmentMethod = getAdjustmentMethod(method, weatherProvider)
 
 	if (!adjustmentMethod) {
-		return makeWateringErrorResponse(new CodedError(ErrorCode.InvalidAdjustmentMethod), req);
+		return makeWateringErrorResponse(new InvalidAdjustmentMethodError(), req);
 	}
 
 	const adjustmentOptions = parseWaterAdjustmentOptions(url.searchParams.get('wto'))
@@ -68,7 +68,7 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 
 	if (!adjustmentOptions) {
 		// If the JSON is not valid then abort the calculation
-		return makeWateringErrorResponse(new CodedError(ErrorCode.MalformedAdjustmentOptions), req)
+		return makeWateringErrorResponse(new MalformedAdjustmentOptionsError(), req)
 	}
 
 	// Attempt to resolve provided location to GPS coordinates.

@@ -1,7 +1,6 @@
 import { GeoCoordinates } from "@/types";
-import { CodedError } from "@/errors";
+import { LocationServiceApiError, NoLocationFoundError } from "@/errors";
 import { httpJSONRequest } from '@/http';
-import { ErrorCode } from '@/constants';
 import { AbstractGeocoder, GeocoderOptions } from './AbstractGeocoder';
 
 type OpenWeatherMap_Geocoding_API_Response = {
@@ -30,11 +29,11 @@ export default class OpenWeatherMap extends AbstractGeocoder {
 			data = await httpJSONRequest<OpenWeatherMap_Geocoding_API_Response>(`http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=${limit}&appid=${this.API_KEY}`);
 		} catch (err) {
 			// If the request fails, indicate no data was found.
-			throw new CodedError(ErrorCode.LocationServiceApiError);
+			throw new LocationServiceApiError();
 		}
 
 		if (!data.length) {
-			throw new CodedError(ErrorCode.NoLocationFound);
+			throw new NoLocationFoundError();
 		}
 
 		return [

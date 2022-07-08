@@ -58,18 +58,24 @@ export enum ErrorCode {
 	/** The location name was specified in an invalid format (e.g. a PWS ID). */
 	InvalidLocationFormat = 22,
 
-	/** An Error related to personal weather stations. */
+	/** An Error related to personal weather stations.
+	 * @deprecated */
 	PwsError = 3,
-	/** The PWS ID did not use the correct format. */
+	/** The PWS ID did not use the correct format.
+	 * @deprecated */
 	InvalidPwsId = 30,
-	/** The PWS API key did not use the correct format. */
+	/** The PWS API key did not use the correct format.
+	 * @deprecated */
 	InvalidPwsApiKey = 31,
 	// TODO use this error code.
-	/** The PWS API returned an error because a bad API key was specified. */
+	/** The PWS API returned an error because a bad API key was specified.
+	 * @deprecated */
 	PwsAuthenticationError = 32,
-	/** A PWS was specified but the data for the specified AdjustmentMethod cannot be retrieved from a PWS. */
+	/** A PWS was specified but the data for the specified AdjustmentMethod cannot be retrieved from a PWS.
+	 * @deprecated */
 	PwsNotSupported = 33,
-	/** A PWS is required by the WeatherProvider but was not provided. */
+	/** A PWS is required by the WeatherProvider but was not provided.
+	 * @deprecated */
 	NoPwsProvided = 34,
 
 	/** An error related to AdjustmentMethods or watering restrictions. */

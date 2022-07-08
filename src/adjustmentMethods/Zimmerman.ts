@@ -50,7 +50,7 @@ export class Zimmerman extends AbstractAdjustmentMethod<ZimmermanAdjustmentOptio
 
 		// Check to make sure valid data exists for all factors
 		// if (!validateValues(["temp", "humidity", "precip"], wateringData)) {
-		// 	throw new CodedError(ErrorCode.MissingWeatherField);
+		// 	throw new MissingWeatherFieldError();
 		// }
 
 		const rawData = {

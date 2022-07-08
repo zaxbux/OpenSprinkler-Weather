@@ -1,7 +1,6 @@
 import { AbstractAdjustmentMethod, AdjustmentMethodResponse } from "./AbstractAdjustmentMethod";
 import { GeoCoordinates, WeatherProviderShortID } from "@/types";
-import { CodedError } from "@/errors";
-import { ErrorCode } from '@/constants';
+import { MissingAdjustmentOptionError } from "@/errors";
 import { calculateETo } from '@/utils/evapotranspiration';
 
 export interface EToScalingAdjustmentOptions {
@@ -38,7 +37,7 @@ interface RawData {
 export class ETo extends AbstractAdjustmentMethod {
 	protected async calculateWateringScale(adjustmentOptions: EToScalingAdjustmentOptions, coordinates: GeoCoordinates): Promise<AdjustmentMethodResponse<RawData>> {
 		if (!adjustmentOptions.baseETo) {
-			throw new CodedError(ErrorCode.MissingAdjustmentOption)
+			throw new MissingAdjustmentOptionError()
 		}
 
 		// Default elevation is based on data from https://www.pnas.org/content/95/24/14009.

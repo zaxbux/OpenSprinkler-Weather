@@ -1,6 +1,6 @@
 import { getGeocoderCache } from '@/cache/geocoder';
-import { ErrorCode, GeocoderService, REGEX } from '@/constants';
-import { CodedError, ConfigurationError } from '@/errors';
+import { GeocoderService, REGEX } from '@/constants';
+import { ConfigurationError, InvalidLocationFormatError } from '@/errors';
 import { GeoCoordinates } from '@/types';
 import { AbstractGeocoder } from './AbstractGeocoder';
 import GoogleMaps from './GoogleMaps';
@@ -30,7 +30,7 @@ export async function resolveCoordinates(location: RawLocation, geocoder: Geocod
 	}
 
 	if (!location) {
-		throw new CodedError(ErrorCode.InvalidLocationFormat)
+		throw new InvalidLocationFormatError()
 	}
 
 	// Convert coordinates string to tuple

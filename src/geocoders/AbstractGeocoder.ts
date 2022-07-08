@@ -1,6 +1,6 @@
 import { AbstractGeocoderCache } from '@/cache/geocoder/AbstractGeocoderCache';
 import { ErrorCode } from '@/constants';
-import { CodedError } from '@/errors';
+import { CodedError, NoLocationFoundError } from '@/errors';
 import { GeoCoordinates } from '@/types';
 
 export interface GeocoderOptions {
@@ -34,7 +34,7 @@ export abstract class AbstractGeocoder {
 			const coords = await this.options.cache.get(location);
 			if (!coords || (coords[0] === 0 && coords[1] === 0)) {
 				// Throw an error if there are no results for this location.
-				throw new CodedError(ErrorCode.NoLocationFound);
+				throw new NoLocationFoundError();
 			} else {
 				return coords;
 			}

@@ -1,7 +1,6 @@
 import { GeoCoordinates } from "@/types";
-import { CodedError } from "@/errors";
+import { LocationServiceApiError, NoLocationFoundError } from "@/errors";
 import { httpJSONRequest } from '@/http';
-import { ErrorCode } from '@/constants';
 import { AbstractGeocoder, GeocoderOptions } from './AbstractGeocoder';
 
 /**
@@ -23,11 +22,11 @@ export default class GoogleMaps extends AbstractGeocoder {
 			data = await httpJSONRequest(`https://maps.googleapis.com/maps/api/geocode/json?key=${this.API_KEY}&address=${encodeURIComponent(location)}`);
 		} catch (err) {
 			// If the request fails, indicate no data was found.
-			throw new CodedError(ErrorCode.LocationServiceApiError);
+			throw new LocationServiceApiError();
 		}
 
 		if (!data.results.length) {
-			throw new CodedError(ErrorCode.NoLocationFound);
+			throw new NoLocationFoundError();
 		}
 
 		return [

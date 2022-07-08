@@ -1,6 +1,5 @@
 import { EToData } from "@/adjustmentMethods/ETo";
-import { ErrorCode } from '@/constants';
-import { CodedError, ConfigurationError } from "@/errors";
+import { ConfigurationError, InsufficientWeatherDataError, MissingWeatherFieldError, WeatherApiError, WeatherApiError } from "@/errors";
 import { httpJSONRequest } from '@/http';
 import { getTimeZoneLookup } from '@/timeZoneLookup';
 import { GeoCoordinates, OpenWeatherMap_OneCall_30, TimeData, WeatherProviderID, WeatherProviderShortID } from "@/types";
@@ -27,7 +26,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 		this.API_KEY = apiKey;
 	}
 
-	public getID(): string {
+	public getID(): WeatherProviderShortID {
 		return this.ID_SHORT
 	}
 
@@ -41,7 +40,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 			const { timezone_offset, current, hourly } = await this.callAPI<OpenWeatherMap_OneCall_30.Response>('onecall', coordinates, ['minutely', 'daily', 'alerts'])
 
 			if (!hourly || !current) {
-				throw new CodedError(ErrorCode.MissingWeatherField);
+				throw new MissingWeatherFieldError();
 			}
 
 			// The new API call only offers 48 hours of hourly forecast data which is fine because we only use 24 hours
@@ -51,7 +50,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 
 			// Indicate watering data could not be retrieved if the forecast data is incomplete.
 			if (!forecast || !forecast.hourly) {
-				throw new CodedError(ErrorCode.MissingWeatherField);
+				throw new MissingWeatherFieldError();
 			}
 
 			let totalTemp = 0,
@@ -85,7 +84,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 
 		} catch (err) {
 			console.error("Error retrieving weather information from OWM:", err);
-			throw new CodedError(ErrorCode.WeatherApiError);
+			throw new WeatherApiError();
 		}
 	}
 
@@ -149,7 +148,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 			// translating the hourly into a 3h forecast again could probably ditch the translation
 			// but to be safe just sticking with the 3h translation
 			if (!hourly) {
-				throw new CodedError(ErrorCode.InsufficientWeatherData);
+				throw new InsufficientWeatherDataError();
 			}
 
 			const forecast = this.get3hForecast(hourly, 24);
@@ -157,7 +156,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 
 			// Indicate ETₒ data could not be retrieved if the forecast data is incomplete.
 			if (!forecast || !forecast.hourly || forecast.hourly.length < 8) {
-				throw new CodedError(ErrorCode.InsufficientWeatherData);
+				throw new InsufficientWeatherDataError();
 			}
 
 			// Take a sample over 24 hours.
@@ -207,7 +206,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 
 		} catch (err) {
 			console.error("Error retrieving ETₒ information from OWM:", err);
-			throw new CodedError(ErrorCode.WeatherApiError);
+			throw new WeatherApiError();
 		}
 	}
 
