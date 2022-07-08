@@ -1,5 +1,5 @@
 import { AbstractAdjustmentMethod, AdjustmentMethodResponse } from "./AbstractAdjustmentMethod"
-import { GeoCoordinates, WeatherProviderShortID } from "@/types"
+import { GeoCoordinates } from "@/types"
 
 export interface RainDelayAdjustmentOptions {
 	/** Rain delay to use (hours) */
@@ -7,7 +7,6 @@ export interface RainDelayAdjustmentOptions {
 }
 
 interface IRawData {
-	wp: WeatherProviderShortID
 	raining: number
 }
 
@@ -21,6 +20,7 @@ export class RainDelay extends AbstractAdjustmentMethod {
 		const d = adjustmentOptions.hasOwnProperty("d") ? adjustmentOptions.d : 24
 
 		return {
+			timezone: wateringData.timezone,
 			scale: undefined,
 			rainDelay: raining ? d : undefined,
 			wateringData,

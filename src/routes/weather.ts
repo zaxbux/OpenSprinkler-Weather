@@ -5,10 +5,10 @@ import { ErrorCode } from '@/constants';
 import { CodedError, InvalidAdjustmentMethodError, makeCodedError, MalformedAdjustmentOptionsError } from "@/errors";
 import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
 import { makeResponse, makeErrorResponse } from '@/http';
-import { GeoCoordinates, WateringDataResponse, WeatherDataResponse } from "@/types";
+import { GeoCoordinates, WateringData, WateringDataResponse, WeatherDataResponse } from "@/types";
 import { encodeWateringDataResponseData, getRemoteAddress, getTimezone, ipToInt, parseWaterAdjustmentOptions, shouldReturnJSON } from '@/utils';
+import { getSolarTimes } from '@/utils/solarTimes';
 import { getWeatherProvider } from '@/weatherProviders';
-import { IWateringData } from '@/weatherProviders/types';
 import type { Request as IRequest } from 'itty-router';
 
 /**
@@ -28,15 +28,17 @@ export const getWeatherData = async function (req: Request, env: Env): Promise<R
 	// Continue with the weather request
 	try {
 		const weatherProvider = await getWeatherProvider(env)
-		const weatherData = await weatherProvider.getWeatherData({ coordinates, env });
+		const weatherData = await weatherProvider.getWeatherData({ coordinates, env })
+
+		const { sunrise, sunset } = getSolarTimes(coordinates, weatherData.timezone)
 
 		// @todo: caching headers
 		const response: WeatherDataResponse = {
-			timezone: weatherData.timezone,
-			sunrise: weatherData.sunrise,
-			sunset: weatherData.sunset,
-			...weatherData.data,
-			location: weatherData.location,
+			//timezone: weatherData.timezone,
+			sunrise,
+			sunset,
+			...weatherData,
+			location: [coordinates[0], coordinates[1]],
 		}
 
 		return makeResponse(req, response)
@@ -81,22 +83,16 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 
 
 	const wateringScaleCache = await getWateringScaleCache(env)
-	//const timeData = await weatherProvider.getTimeData(coordinates, env)
-	const timeData = {
-		timezone: -420,
-		sunrise: 500,
-		sunset: 1200
-	}
 	const cachedScale = wateringScaleCache ? await wateringScaleCache.get({ method, coordinates, adjustmentOptions }) : undefined
 
 	if (cachedScale && weatherProvider.shouldCacheWateringScale()) {
+		const { sunrise, sunset } = getSolarTimes(coordinates, cachedScale.timezone)
 		// Use the cached data if it exists.
 		return makeWateringDataResponse({
 			errorCode: ErrorCode.NoError,
 			externalIP: remoteAddress,
-			timezone: getTimezone(timeData.timezone, undefined),
-			sunrise: timeData.sunrise,
-			sunset: timeData.sunset,
+			sunrise,
+			sunset,
 			...cachedScale,
 		}, req)
 	}
@@ -109,13 +105,15 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 		return makeWateringErrorResponse(makeCodedError(err), req);
 	}
 
-	const data: IWateringData = {
+	const { sunrise, sunset } = getSolarTimes(coordinates, adjustmentMethodResponse.timezone)
+
+	const data: WateringData = {
 		errorCode: 0,
-		scale: adjustmentMethodResponse.scale,
-		sunrise: timeData.sunrise,
-		sunset: timeData.sunset,
 		externalIP: remoteAddress,
-		timezone: getTimezone(timeData.timezone, undefined),
+		timezone: adjustmentMethodResponse.timezone,
+		sunrise,
+		sunset,
+		scale: adjustmentMethodResponse.scale,
 		rainDelay: adjustmentMethodResponse.rainDelay,
 		rawData: adjustmentMethodResponse.rawData,
 	}
@@ -149,7 +147,7 @@ function makeWateringErrorResponse(error: CodedError, request: Request) {
  * @param wateringData The watering data.
  * @param request The original request object.
  */
-function makeWateringDataResponse(wateringData: IWateringData, request: Request) {
+function makeWateringDataResponse(wateringData: WateringData, request: Request) {
 	// Object consisting only of parameters that the firmware will parse.
 	const response: WateringDataResponse = {
 		errCode: wateringData.errorCode,
@@ -157,7 +155,7 @@ function makeWateringDataResponse(wateringData: IWateringData, request: Request)
 		sunrise: wateringData.sunrise,
 		sunset: wateringData.sunset,
 		eip: wateringData.externalIP ? ipToInt(wateringData.externalIP) : undefined,
-		tz: wateringData.timezone,
+		tz: getTimezone(wateringData.timezone, false),
 		rd: wateringData.rainDelay,
 		rawData: wateringData.rawData,
 	}

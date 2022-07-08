@@ -1,6 +1,5 @@
 import { WeatherProvider } from '@/constants'
-import { GeoCoordinates, WeatherProviderShortID } from "@/types"
-import { IWeatherData } from './types'
+import { GeoCoordinates, WeatherData, WeatherProviderShortID } from "@/types"
 
 /**
  * Data used to calculate ETo. This data should be taken from a 24 hour time window.
@@ -44,21 +43,10 @@ export interface ZimmermanWateringData {
 
 export interface WateringData extends ZimmermanWateringData {
 	weatherProvider: WeatherProviderShortID
+	/** UTC Time Zone offset (in minutes) */
 	timezone: number
-	sunrise: number
-	sunset: number
 	/** The total precipitation over the window (in millimeters). */
 	precip: number;
-	location: GeoCoordinates
-}
-
-
-
-export interface WeatherData {
-	timezone: number
-	sunrise: number
-	sunset: number
-	data: IWeatherData
 	location: GeoCoordinates
 }
 
@@ -88,13 +76,6 @@ export abstract class AbstractWeatherProvider {
 	 * CodedError if an error occurs while retrieving the EToData (or the WeatherProvider does not support this method).
 	 */
 	public abstract getEToData(parameters: { coordinates: GeoCoordinates }): Promise<EToData>
-
-	/**
-	 * Calculates timezone and sunrise/sunset for the specified coordinates.
-	 * @param coordinates The coordinates to use to calculate time data.
-	 * @return The TimeData for the specified coordinates.
-	 */
-	//public abstract getTimeData(coordinates: GeoCoordinates, env: Env): Promise<TimeData>
 
 	/**
 	 * Indicates if a watering scale calculated using data from this WeatherProvider should be cached.

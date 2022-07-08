@@ -1,7 +1,6 @@
 //import { AdjustmentOptions } from '@/adjustmentMethods/AdjustmentMethod';
 import { AbstractTimeZoneLookup } from '@/timeZoneLookup/AbstractTimeZoneLookup';
-import { GeoCoordinates } from '@/types';
-import { IWateringData } from '@/weatherProviders/types';
+import { GeoCoordinates, WateringData } from '@/types';
 
 /* export interface CachedScale {
 	scale: number;
@@ -9,7 +8,7 @@ import { IWateringData } from '@/weatherProviders/types';
 	rainDelay: number;
 } */
 
-export type CachedWateringScale = Pick<IWateringData, 'scale' | 'rainDelay' | 'rawData'>
+export type CachedWateringScale = Pick<WateringData, 'timezone' | 'scale' | 'rainDelay' | 'rawData'>
 
 export interface CachedWateringScaleHashParameters {
 	/** The ID of the AdjustmentMethod used to calculate this watering scale. This value should have the appropriate bits set for any restrictions that were used. */

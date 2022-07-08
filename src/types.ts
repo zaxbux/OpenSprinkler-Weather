@@ -1,5 +1,3 @@
-import { WeatherForecastDaily } from './weatherProviders/types'
-
 /** Geographic coordinates in decimal format: `[ latitude, longitude ]` */
 export type GeoCoordinates = readonly [number, number]
 
@@ -8,10 +6,10 @@ export type GeoCoordinates = readonly [number, number]
  * Required properties for a response to the weatherData endpoint.
  */
 export interface WeatherDataResponse {
+	weatherProvider: WeatherProviderShortID | WeatherProviderID,
 	timezone: number
 	sunrise: number
 	sunset: number
-	weatherProvider: WeatherProviderID,
 	temp: number
 	icon: string
 	description: string
@@ -25,7 +23,9 @@ export interface WeatherDataResponse {
 export interface WateringDataResponse {
 	errCode: number
 	scale?: number
+	/** This parameter should not be cached. */
 	sunrise?: number
+	/** This parameter should not be cached. */
 	sunset?: number
 	eip?: number
 	tz?: number
@@ -33,53 +33,130 @@ export interface WateringDataResponse {
 	rawData?: Record<string, string | number | object | undefined>
 }
 
-export interface TimeData {
-	/** The UTC offset, in minutes. This uses POSIX offsets, which are the negation of typically used offsets
-	 * (https://github.com/eggert/tz/blob/2017b/etcetera#L36-L42).
-	 */
-	timezone: number;
-	/** The time of sunrise, in minutes from UTC midnight. */
-	sunrise: number;
-	/** The time of sunset, in minutes from UTC midnight. */
-	sunset: number;
-}
+// interface TimeData {
+// 	/** The UTC offset, in minutes. This uses POSIX offsets, which are the negation of typically used offsets
+// 	 * (https://github.com/eggert/tz/blob/2017b/etcetera#L36-L42).
+// 	 */
+// 	timezone: number;
+// 	/** The time of sunrise, in minutes from UTC midnight. */
+// 	sunrise: number;
+// 	/** The time of sunset, in minutes from UTC midnight. */
+// 	sunset: number;
+// }
 
+/**
+ * Data used to make response for the web app.
+ */
 export interface WeatherData {
 	/** The WeatherProvider that generated this data. */
 	weatherProvider: WeatherProviderShortID | WeatherProviderID;
 	/** The current temperature (in Celsius). */
 	temp: number;
-	/** The current humidity (as a percentage). */
-	humidity: number;
-	/** The current wind speed (in meters per second). */
-	wind: number;
 	/** A human-readable description of the weather. */
 	description: string;
 	/** An icon ID that represents the current weather. This will be used in http://openweathermap.org/img/w/<ICON_ID>.png */
 	icon: string;
-	region: string;
-	city: string;
+	/** Daily forecasts */
+	forecast: WeatherForecastDaily[]
+
+	// These are used internally, not used by web-app
+	timezone: number
+
+	// These properties are not used, yet
+
+	/** The current humidity (as a percentage). */
+	humidity?: number;
+	/** The current wind speed (in meters per second). */
+	wind?: number;
+	region?: string;
+	city?: string;
 	/** The forecasted minimum temperature for the current day (in Celsius). */
-	minTemp: number;
+	// minTemp?: number; // It does not make sense to have these values here, already in forecast
 	/** The forecasted minimum temperature for the current day (in Celsius). */
-	maxTemp: number;
+	// maxTemp?: number; // It does not make sense to have these values here, already in forecast
 	/** The forecasted total precipitation for the current day (in millimeters). */
-	precip: number;
-	forecast: WeatherDataForecast[]
+	precip?: number;
 }
 
 /** The forecasted weather for a specific day in the future. */
-export interface WeatherDataForecast {
-	/** The forecasted minimum temperature for this day (in Celsius). */
-	temp_min: number;
-	/** The forecasted maximum temperature for this day (in Celsius). */
-	temp_max: number;
-	/** The timestamp of the day this forecast is for (in Unix epoch seconds). */
-	date: number;
-	/** An icon ID that represents the weather at this forecast window. This will be used in http://openweathermap.org/img/w/<ICON_ID>.png */
-	icon: string;
-	/** A human-readable description of the weather. */
-	description: string;
+export interface WeatherForecastDaily {
+	/** Timestamp of the date of the forecast. (Unix, UTC) */
+	date: number
+	/** OpenWeatherMap Icon ID {@link https://openweathermap.org/weather-conditions#Icon-list}*/
+	icon: string
+	/** Human-readable description of the weather. */
+	description: string
+	/** Forecasted minimum temperature (Celsius). */
+	temp_min: number
+	/** Forecasted maximum temperature (Celsius). */
+	temp_max: number
+}
+
+import { ErrorCode } from '@/constants';
+
+/**
+ * The data used to return a response to requests from the controller/firmware.
+ */
+export interface WateringData {
+	/**
+	 * Error code - `errCode`.
+	 */
+	errorCode: ErrorCode
+
+	/**
+	 * Watering scale - `scale`.
+	 *
+	 * Value is a percentage in the range [0, 250]
+	 */
+	scale?: number
+
+	/**
+	 * Sunrise time - `sunrise`.
+	 *
+	 * Value is the number of minutes since 00:00 (UTC)
+	 */
+	sunrise?: number
+
+	/**
+	 * Sunset time - `sunset`.
+	 *
+	 * Value is the number of minutes since 00:00 (UTC)
+	 */
+	sunset?: number
+
+	/**
+	 * IP Address - `eip`.
+	 *
+	 * Value is the IPv4 address of where the request originated from.
+	 */
+	externalIP?: string
+
+	/**
+	 * Timezone offset - `tz`.
+	 *
+	 * Value is the UTC offset in minutes.
+	 */
+	timezone: number
+
+	/**
+	 * Rain delay - `rd`.
+	 *
+	 * Value is either:
+	 * * Number of hours watering should be delayed by.
+	 * * `undefined` if watering should not delayed for a specific amount of time (either it should be delayed indefinitely or it should not be delayed at all).
+	 *
+	 * This property will not stop watering on its own, and the `scale` property should be set to 0 to actually prevent watering.
+	 */
+	rainDelay?: number
+
+	/**
+	 * Raw data - `rawData`. (Not parsed by the firmware)
+	 *
+	 * Value is the raw data that was used to calculate the watering scale. If no data was used (e.g. an error occurred), this should be undefined.
+	 *
+	 * This will be sent directly to the OS controller, so each field should be formatted in a way that the controller understands and numbers should be rounded appropriately to remove excessive figures.
+	 */
+	rawData?: Record<string, any>
 }
 
 export const enum WeatherProviderID {

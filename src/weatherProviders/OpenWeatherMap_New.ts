@@ -7,7 +7,7 @@ import { getTimezone } from '@/utils';
 import { approximateSolarRadiation, CloudCoverInfo } from '@/utils/solarRadiation';
 import moment from "moment-timezone";
 import SunCalc from "suncalc";
-import { AbstractWeatherProvider, WateringData, WeatherData } from '.';
+import { AbstractWeatherProvider, WateringData, IWeatherData } from '.';
 
 const enum Units {
 	Standard = 'standard',
@@ -89,7 +89,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 	}
 
 
-	public async getWeatherData(parameters: { coordinates: GeoCoordinates, env: Env }): Promise<WeatherData> {
+	public async getWeatherData(parameters: { coordinates: GeoCoordinates, env: Env }): Promise<IWeatherData> {
 		// The OWM free API options changed so need to use the new API method
 		//let current, forecast;
 		try {

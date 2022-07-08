@@ -1,5 +1,5 @@
 import { AbstractAdjustmentMethod, AdjustmentMethodOptions, AdjustmentMethodResponse } from "./AbstractAdjustmentMethod";
-import { GeoCoordinates, WeatherProviderShortID } from "@/types";
+import { GeoCoordinates } from "@/types";
 
 export interface ZimmermanAdjustmentOptions extends AdjustmentMethodOptions {
 	/** Base humidity (as a percentage). */
@@ -17,7 +17,6 @@ export interface ZimmermanAdjustmentOptions extends AdjustmentMethodOptions {
 }
 
 interface IRawData {
-	wp: WeatherProviderShortID
 	/** Humidity */
 	h: number | null
 	/** Precipitation */
@@ -85,12 +84,13 @@ export class Zimmerman extends AbstractAdjustmentMethod<ZimmermanAdjustmentOptio
 			precipFactor = precipFactor * (adjustmentOptions.r / 100);
 		}
 
+		// Apply all of the weather modifying factors and clamp the result between 0 and 200%.
 		const scale = Math.floor(Math.min(Math.max(0, 100 + humidityFactor + tempFactor + precipFactor), 200))
 
 		return {
-			// Apply all of the weather modifying factors and clamp the result between 0 and 200%.
 			scale,
 			rawData,
+			timezone: wateringData.timezone,
 			wateringData: {
 				temp: wateringData.temp,
 				humidity: wateringData.humidity,

@@ -1,6 +1,5 @@
-import { GeoCoordinates } from "@/types";
+import { GeoCoordinates, WateringData, WeatherProviderShortID } from "@/types";
 import { AbstractWeatherProvider } from '@/weatherProviders';
-import { IWateringData } from '@/weatherProviders/types';
 import { AdjustmentMethodWateringData } from '.';
 import { WateringRestrictions } from './WateringRestrictions';
 
@@ -80,11 +79,13 @@ export abstract class AbstractAdjustmentMethod<T = AdjustmentMethodOptions> {
 // 	wateringData: BaseWateringData | undefined;
 // }
 
-export interface AdjustmentMethodResponse<R extends Record<string, any> = Record<string, any>> extends Pick<IWateringData, 'scale' | 'rainDelay' | 'rawData'> {
+export interface AdjustmentMethodResponse<R extends Record<string, any> = Record<string, any>> extends Pick<WateringData, 'timezone' | 'scale' | 'rainDelay' | 'rawData'> {
 	/**
 	 * The data that was used to calculate the watering scale or if no data was used, undefined.
 	 */
 	wateringData?: AdjustmentMethodWateringData
 
-	rawData: R
+	rawData: R & {
+		wp: WeatherProviderShortID | 'Manual'
+	}
 }
