@@ -40,8 +40,8 @@ void setHeader(uint8_t *header) {
 	uint32_t width = IMAGE_WIDTH;
 	uint32_t height = IMAGE_HEIGHT;
 	// originally 0.1, then multiplied by a value to compensate for the bit depth reduction and divided by 25.4 to convert to inches.
-	float scalingFactor = 0.1 * bitReductionFactor / 25.4;
-	float minimumETo = minPixelValue * 0.1 / 25.4;
+	float scalingFactor = 0.1 * bitReductionFactor;
+	float minimumETo = minPixelValue * 0.1;
 
 	// Version
 	header[0] = 1;

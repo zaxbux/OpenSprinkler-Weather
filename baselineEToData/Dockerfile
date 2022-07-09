@@ -9,4 +9,6 @@ COPY dataPreparer.c /dataPreparer.c
 COPY prepareData.sh /prepareData.sh
 COPY entrypoint.sh /entrypoint.sh
 
-RUN apk --update add imagemagick gcc libc-dev && chmod +x /entrypoint.sh /prepareData.sh
+RUN apk --update add imagemagick gcc libc-dev && \
+	chmod +x /entrypoint.sh /prepareData.sh && \
+	gcc -std=c99 -o dataPreparer dataPreparer.c

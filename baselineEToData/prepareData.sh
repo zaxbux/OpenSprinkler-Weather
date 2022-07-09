@@ -1,6 +1,4 @@
 #!/bin/sh
-echo "Compiling dataPreparer.c..."
-gcc -std=c99 -o dataPreparer dataPreparer.c
 
 echo "Downloading ocean mask image..."
 wget http://static1.squarespace.com/static/58586fa5ebbd1a60e7d76d3e/t/59394abb37c58179160775fa/1496926933082/Ocean_Mask.png
