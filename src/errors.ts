@@ -2,10 +2,13 @@ import { ErrorCode } from '@/constants';
 
 export interface CodedError {
 	readonly errCode: ErrorCode
+	/** HTTP status code */
+	readonly status: number
 }
 
 /** An error with a numeric code that can be used to identify the type of error. */
 export abstract class CodedError extends Error implements CodedError {
+	public readonly status: number = 500
 	public constructor(message?: string, options?: ErrorOptions) {
 		super(message, options)
 	}
@@ -13,18 +16,22 @@ export abstract class CodedError extends Error implements CodedError {
 
 export class BadWeatherDataError extends CodedError {
 	public readonly errCode = ErrorCode.BadWeatherData
+	public readonly status = 503
 	message = 'The watering scale could not be calculated due to a problem with the weather information.'
 }
 export class InsufficientWeatherDataError extends CodedError {
 	public readonly errCode = ErrorCode.InsufficientWeatherData
+	public readonly status = 503
 	message = 'Data for a full 24 hour period was not available.'
 }
 export class MissingWeatherFieldError extends CodedError {
 	public readonly errCode = ErrorCode.MissingWeatherField
+	public readonly status = 503
 	message = 'A necessary field was missing from weather data returned by the API.'
 }
 export class WeatherApiError extends CodedError {
 	public readonly errCode = ErrorCode.WeatherApiError
+	public readonly status = 503
 	message = 'An HTTP or parsing error occurred when retrieving weather information.'
 }
 export class LocationError extends CodedError {
@@ -33,14 +40,17 @@ export class LocationError extends CodedError {
 }
 export class LocationServiceApiError extends CodedError {
 	public readonly errCode = ErrorCode.LocationServiceApiError
+	public readonly status = 503
 	message = 'An HTTP or parsing error occurred when resolving the location.'
 }
 export class NoLocationFoundError extends CodedError {
 	public readonly errCode = ErrorCode.NoLocationFound
+	public readonly status = 404
 	message = 'No matches were found for the specified location name.'
 }
 export class InvalidLocationFormatError extends CodedError {
 	public readonly errCode = ErrorCode.InvalidLocationFormat
+	public readonly status = 400
 	message = 'The location name was specified in an invalid format.'
 }
 /** @deprecated */
@@ -79,11 +89,13 @@ export class AdjustmentMethodError extends CodedError {
 }
 export class UnsupportedAdjustmentMethodError extends CodedError {
 	public readonly errCode = ErrorCode.UnsupportedAdjustmentMethod
+	public readonly status = 503
 	message = 'The WeatherProvider is incompatible with the specified AdjustmentMethod.'
 }
 export class InvalidAdjustmentMethodError extends CodedError {
 	public readonly errCode = ErrorCode.InvalidAdjustmentMethod
-	message = 'An invalid AdjustmentMethod ID was specified.'
+	public readonly status = 400
+	message = 'Invalid Adjustment Method ID'
 }
 export class AdjustmentOptionsError extends CodedError {
 	public readonly errCode = ErrorCode.AdjustmentOptionsError
@@ -91,15 +103,18 @@ export class AdjustmentOptionsError extends CodedError {
 }
 export class MalformedAdjustmentOptionsError extends CodedError {
 	public readonly errCode = ErrorCode.MalformedAdjustmentOptions
+	public readonly status = 400
 	message = 'The adjustment options could not be parsed.'
 }
 export class MissingAdjustmentOptionError extends CodedError {
 	public readonly errCode = ErrorCode.MissingAdjustmentOption
-	message = 'A required adjustment option was not provided.'
+	public readonly status = 400
+	readonly message = 'A required adjustment option was not provided.'
 }
 export class UnexpectedError extends CodedError {
 	public readonly errCode = ErrorCode.UnexpectedError
-	message = 'An error was not properly handled and assigned a more specific error code.'
+	public readonly status = 500
+	message = 'Unexpected Error'
 }
 
 /**

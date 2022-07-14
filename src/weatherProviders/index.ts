@@ -1,10 +1,11 @@
 import { WeatherProvider } from '@/constants'
+import { ConfigurationError } from '@/errors';
 import { GeoCoordinates, WeatherData, WeatherProviderShortID } from "@/types"
 
 /**
  * Data used to calculate ETo. This data should be taken from a 24 hour time window.
  */
- export interface EToData {
+ export interface EToData extends Pick<WateringData, 'precip'> {
 	/** The Unix epoch seconds timestamp of the start of this 24 hour time window. */
 	periodStartTime: number;
 	/** The minimum temperature over the time period (in Celsius). */
@@ -22,9 +23,6 @@ import { GeoCoordinates, WeatherData, WeatherProviderShortID } from "@/types"
 	 * different height can be standardized to 2m using the `standardizeWindSpeed` function in EToAdjustmentMethod.
 	 */
 	windSpeed: number;
-
-	/** The total precipitation over the window (in millimeters). */
-	precip: number;
 }
 
 /**
@@ -46,8 +44,8 @@ export interface WateringData extends ZimmermanWateringData {
 	/** UTC Time Zone offset (in minutes) */
 	timezone: number
 	/** The total precipitation over the window (in millimeters). */
-	precip: number;
-	location: GeoCoordinates
+	precip: number
+	//location: GeoCoordinates
 }
 
 export abstract class AbstractWeatherProvider {
@@ -93,5 +91,5 @@ export const getWeatherProvider = async (env: Env): Promise<AbstractWeatherProvi
 			return (await import('@/weatherProviders/OpenWeatherMap')).default(env)
 	}
 
-	throw new Error(`Unknown weather provider (${WEATHER_PROVIDER})`)
+	throw new ConfigurationError(`Unknown weather provider (${WEATHER_PROVIDER})`)
 }

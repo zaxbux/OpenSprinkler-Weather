@@ -1,9 +1,13 @@
 import { REGEX } from './constants';
+import { MalformedAdjustmentOptionsError } from './errors';
 
 /**
  * Parses the weather adjustment options (`wto` request parameter).
+ *
+ * @throws {@link MalformedAdjustmentOptionsError}
+ * This exception is thrown if the JSON string could not be parsed.
  */
-export function parseWaterAdjustmentOptions(adjustmentOptionsString: string | null): Record<string, any> | undefined {
+export function parseWaterAdjustmentOptions(adjustmentOptionsString: string | null): Record<string, any> {
 	if (adjustmentOptionsString === null) {
 		return {}
 	}
@@ -15,7 +19,7 @@ export function parseWaterAdjustmentOptions(adjustmentOptionsString: string | nu
 		// Reconstruct JSON string from deformed controller output
 		return JSON.parse(`{${adjustmentOptionsString}}`)
 	} catch (err) {
-		return undefined
+		throw new MalformedAdjustmentOptionsError()
 	}
 }
 
