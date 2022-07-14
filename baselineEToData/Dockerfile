@@ -1,14 +1,15 @@
-FROM alpine:3.10
+FROM rust:alpine
 
 VOLUME /output/
-ENTRYPOINT ["/entrypoint.sh"]
-# Default to 20 passes.
-CMD ["20"]
+ENTRYPOINT ["/usr/src/baseline-eto/entrypoint.sh"]
 
-COPY dataPreparer.c /dataPreparer.c
-COPY prepareData.sh /prepareData.sh
-COPY entrypoint.sh /entrypoint.sh
+WORKDIR /usr/src/baseline-eto
+
+COPY . .
 
 RUN apk --update add imagemagick gcc libc-dev && \
-	chmod +x /entrypoint.sh /prepareData.sh && \
-	gcc -std=c99 -o dataPreparer dataPreparer.c
+	rm -rf /var/lib/apt/lists/* && \
+	chmod +x entrypoint.sh && \
+	cargo install --path .
+
+WORKDIR /output

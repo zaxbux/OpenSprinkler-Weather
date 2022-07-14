@@ -1,4 +1,5 @@
 # Don't send images to the Docker daemon since they are very large.
+target/
 *.bin
 *.tif
 *.png

@@ -8,14 +8,15 @@
 		"deploy": "wrangler publish"
 	},
 	"dependencies": {
+		"@mapbox/timespace": "^2.0.4",
 		"geo-tz": "^7.0",
 		"moment": "^2.29.3",
 		"moment-timezone": "^0.5",
 		"suncalc": "^1.9"
 	},
 	"devDependencies": {
-		"@types/moment": "^2.13.0",
 		"@cloudflare/workers-types": "^3.14.0",
+		"@types/moment": "^2.13.0",
 		"@types/moment-timezone": "^0.5.12",
 		"@types/suncalc": "^1.8",
 		"itty-router": "^2.6.1",
