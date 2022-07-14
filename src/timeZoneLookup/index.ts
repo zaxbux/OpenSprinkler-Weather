@@ -1,8 +1,6 @@
 import { TimeZoneLookupService } from '@/constants';
 import { ConfigurationError } from '@/errors';
 import { AbstractTimeZoneLookup } from './AbstractTimeZoneLookup';
-import { GoogleMaps } from './GoogleMaps';
-import { OpenWeatherMap } from './OpenWeatherMap';
 import { Static } from './Static';
 
 /**
@@ -14,16 +12,12 @@ import { Static } from './Static';
 export const getTimeZoneLookup = async (env: Env): Promise<AbstractTimeZoneLookup> => {
 	const { TIMEZONE_LOOKUP } = env
 	switch (TIMEZONE_LOOKUP as string) {
+		case TimeZoneLookupService.GeoTZ:
+			return (await import('@/timeZoneLookup/geoTz')).default(env)
 		case TimeZoneLookupService.OpenWeatherMap:
-			if (!env.OWM_API_KEY) {
-				throw new ConfigurationError(`OWM_API_KEY is undefined`)
-			}
-			return new OpenWeatherMap({ apiKey: env.OWM_API_KEY })
+			return (await import('@/timeZoneLookup/OpenWeatherMap')).default(env)
 		case TimeZoneLookupService.GoogleMaps:
-			if (!env.GOOGLE_MAPS_API_KEY) {
-				throw new ConfigurationError(`GOOGLE_MAPS_API_KEY is undefined`)
-			}
-			return new GoogleMaps({ apiKey: env.GOOGLE_MAPS_API_KEY })
+			return (await import('@/timeZoneLookup/GoogleMaps')).default(env)
 	}
 
 	if (env.TIMEZONE_ID) {

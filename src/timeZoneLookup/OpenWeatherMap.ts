@@ -1,3 +1,4 @@
+import { ConfigurationError } from '@/errors';
 import { GeoCoordinates } from '@/types';
 import { AbstractTimeZoneLookup, TimeZoneLookupOptions } from './AbstractTimeZoneLookup';
 
@@ -22,4 +23,14 @@ export class OpenWeatherMap extends AbstractTimeZoneLookup<OpenWeatherMapOptions
 
 		return data.timezone
 	}
+}
+
+
+export default (env: Env) => {
+	const { OWM_API_KEY } = env
+	if (!OWM_API_KEY) {
+		throw new ConfigurationError(`OWM_API_KEY is undefined`)
+	}
+
+	return new OpenWeatherMap({ apiKey: OWM_API_KEY })
 }

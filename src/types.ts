@@ -136,7 +136,7 @@ export interface WateringData {
 	 *
 	 * Value is the UTC offset in minutes.
 	 */
-	timezone: number
+	timezone?: number
 
 	/**
 	 * Rain delay - `rd`.

@@ -1,4 +1,5 @@
 import { GeoCoordinates } from '@/types'
+import moment from 'moment'
 
 export interface TimeZoneLookupOptions {
 	cache?: CacheStorage
@@ -12,4 +13,8 @@ export abstract class AbstractTimeZoneLookup<T extends TimeZoneLookupOptions = T
 	}
 
 	abstract getTimeZoneId(coordinates: GeoCoordinates): Promise<string>
+
+	public async getTimeZoneOffset(coordinates: GeoCoordinates) {
+		return moment().tz(await this.getTimeZoneId(coordinates)).utcOffset()
+	}
 }

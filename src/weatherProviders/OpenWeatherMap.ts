@@ -46,7 +46,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 				timezone: forecast.city.timezone / 60,
 				//sunrise,
 				//sunset,
-				location: coordinates,
+				//location: coordinates,
 			};
 
 		} catch (err) {
@@ -164,7 +164,7 @@ export class OpenWeatherMap extends AbstractWeatherProvider {
 			solarRadiation: approximateSolarRadiation(this.getCloudCoverInfo(samples), parameters.coordinates),
 			// Assume wind speed measurements are taken at 2 meters.
 			windSpeed: samples.reduce((sum, window) => sum + (window.wind.speed || 0), 0) / samples.length,
-			precip: samples.reduce((sum, window) => sum + (window.rain?.['3h'] || 0), 0)
+			precip: samples.reduce((sum, window) => sum + (window.rain?.['3h'] || 0), 0),
 		};
 	}
 

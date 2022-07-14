@@ -1,3 +1,4 @@
+import { ConfigurationError } from '@/errors';
 import { GeoCoordinates } from '@/types';
 import moment from 'moment';
 import { AbstractTimeZoneLookup, TimeZoneLookupOptions } from './AbstractTimeZoneLookup';
@@ -41,4 +42,11 @@ export class GoogleMaps extends AbstractTimeZoneLookup<Options> {
 
 		return data.timeZoneId!
 	}
+}
+
+export default (env: Env) => {
+	if (!env.GOOGLE_MAPS_API_KEY) {
+		throw new ConfigurationError(`GOOGLE_MAPS_API_KEY is undefined`)
+	}
+	return new GoogleMaps({ apiKey: env.GOOGLE_MAPS_API_KEY })
 }

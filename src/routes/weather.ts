@@ -1,14 +1,15 @@
 import { getAdjustmentMethod } from '@/adjustmentMethods';
-import { AdjustmentMethodResponse } from "@/adjustmentMethods/AbstractAdjustmentMethod";
+import { AbstractAdjustmentMethod, AdjustmentMethodResponse } from "@/adjustmentMethods/AbstractAdjustmentMethod";
 import { getWateringScaleCache } from '@/cache/wateringScale';
 import { ErrorCode } from '@/constants';
-import { CodedError, InvalidAdjustmentMethodError, makeCodedError, MalformedAdjustmentOptionsError } from "@/errors";
+import { CodedError, makeCodedError } from "@/errors";
 import { getGeocoderProvider, resolveCoordinates } from '@/geocoders';
-import { makeResponse, makeErrorResponse } from '@/http';
+import { makeErrorResponse, makeResponse } from '@/http';
+import { getTimeZoneLookup } from '@/timeZoneLookup';
 import { GeoCoordinates, WateringData, WateringDataResponse, WeatherDataResponse } from "@/types";
 import { encodeWateringDataResponseData, getRemoteAddress, getTimezone, ipToInt, parseWaterAdjustmentOptions, shouldReturnJSON } from '@/utils';
 import { getSolarTimes } from '@/utils/solarTimes';
-import { getWeatherProvider } from '@/weatherProviders';
+import { AbstractWeatherProvider, getWeatherProvider } from '@/weatherProviders';
 import type { Request as IRequest } from 'itty-router';
 
 /**
@@ -58,39 +59,28 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 	const url = new URL(req.url)
 	//const firmwareVersion = url.searchParams.get('fwv') ?? '' // @todo: Change response format based on firmware version
 
-	const weatherProvider = await getWeatherProvider(env)
-	const adjustmentMethod = getAdjustmentMethod(method, weatherProvider)
-
-	if (!adjustmentMethod) {
-		return makeWateringErrorResponse(new InvalidAdjustmentMethodError(), req);
-	}
-
-	const adjustmentOptions = parseWaterAdjustmentOptions(url.searchParams.get('wto'))
-	const remoteAddress = getRemoteAddress(req)
-
-	if (!adjustmentOptions) {
-		// If the JSON is not valid then abort the calculation
-		return makeWateringErrorResponse(new MalformedAdjustmentOptionsError(), req)
-	}
-
-	// Attempt to resolve provided location to GPS coordinates.
+	let weatherProvider: AbstractWeatherProvider
+	let adjustmentMethod: AbstractAdjustmentMethod
+	let adjustmentOptions: Record<string, any>
 	let coordinates: GeoCoordinates
 	try {
+		weatherProvider = await getWeatherProvider(env)
+		adjustmentMethod = await getAdjustmentMethod(method, weatherProvider)
+		adjustmentOptions = parseWaterAdjustmentOptions(url.searchParams.get('wto'))
 		coordinates = await resolveCoordinates(req, async (location) => (await getGeocoderProvider(env)).getLocation(location))
 	} catch (err) {
 		return makeWateringErrorResponse(makeCodedError(err), req)
 	}
 
-
 	const wateringScaleCache = await getWateringScaleCache(env)
 	const cachedScale = wateringScaleCache ? await wateringScaleCache.get({ method, coordinates, adjustmentOptions }) : undefined
 
 	if (cachedScale && weatherProvider.shouldCacheWateringScale()) {
-		const { sunrise, sunset } = getSolarTimes(coordinates, cachedScale.timezone)
+		const { sunrise, sunset } = cachedScale.timezone ? getSolarTimes(coordinates, cachedScale.timezone) : { sunrise: undefined, sunset: undefined }
 		// Use the cached data if it exists.
 		return makeWateringDataResponse({
 			errorCode: ErrorCode.NoError,
-			externalIP: remoteAddress,
+			externalIP: getRemoteAddress(req),
 			sunrise,
 			sunset,
 			...cachedScale,
@@ -105,12 +95,19 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 		return makeWateringErrorResponse(makeCodedError(err), req);
 	}
 
-	const { sunrise, sunset } = getSolarTimes(coordinates, adjustmentMethodResponse.timezone)
+	// Use the timezone returned by the Weather Service (if it supports that), or query the timezone database.
+	let timezone = adjustmentMethodResponse.timezone
+	if (!timezone) {
+		const timeZoneLookup = await getTimeZoneLookup(env)
+		timezone = await timeZoneLookup.getTimeZoneOffset(coordinates)
+	}
+
+	const { sunrise, sunset } = adjustmentMethodResponse.timezone ? getSolarTimes(coordinates, timezone) : { sunrise: undefined, sunset: undefined }
 
 	const data: WateringData = {
 		errorCode: 0,
-		externalIP: remoteAddress,
-		timezone: adjustmentMethodResponse.timezone,
+		externalIP: getRemoteAddress(req),
+		timezone,
 		sunrise,
 		sunset,
 		scale: adjustmentMethodResponse.scale,
@@ -120,8 +117,7 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 
 	// Cache the watering scale if caching is enabled and no error occurred.
 	if (wateringScaleCache && weatherProvider.shouldCacheWateringScale()) {
-		//const { scale, rainDelay, rawData } = data
-		wateringScaleCache!.put({ method, coordinates, adjustmentOptions }, data);
+		wateringScaleCache.put({ method, coordinates, adjustmentOptions }, data)
 	}
 
 	return makeWateringDataResponse(data, req)
@@ -135,10 +131,10 @@ export const getWateringData = async function (req: Request & { params: NonNulla
 function makeWateringErrorResponse(error: CodedError, request: Request) {
 	const { errCode } = error
 	if (errCode === ErrorCode.UnexpectedError) {
-		console.error(`An unexpected error occurred:`, error);
+		console.error(`An unexpected error occurred:`, error)
 	}
 
-	return makeControllerResponse({ errCode }, request);
+	return makeControllerResponse(error, request)
 }
 
 /**
@@ -155,23 +151,32 @@ function makeWateringDataResponse(wateringData: WateringData, request: Request) 
 		sunrise: wateringData.sunrise,
 		sunset: wateringData.sunset,
 		eip: wateringData.externalIP ? ipToInt(wateringData.externalIP) : undefined,
-		tz: getTimezone(wateringData.timezone, false),
+		tz: wateringData.timezone ? getTimezone(wateringData.timezone, false) : undefined,
 		rd: wateringData.rainDelay,
 		rawData: wateringData.rawData,
 	}
 
-	return makeControllerResponse(response as Record<string, any>, request)
+	return makeControllerResponse(response, request)
 }
 
 /**
  * Makes a response that is understood by the firmware.
- * @param data
+ * @param bodyInit
  * @param request
  * @returns
  */
-function makeControllerResponse(data: Record<string, undefined | number | string | object>, request: Request): Response {
+function makeControllerResponse(bodyInit: WateringDataResponse | CodedError, request: Request, init: ResponseInit = {}) {
 	const useJSON = shouldReturnJSON(request)
 	const contentType = useJSON ? 'application/json' : 'text/plain'
-	const body = useJSON ? JSON.stringify(data) : encodeWateringDataResponseData(data)
-	return new Response(body, { headers: { 'Content-Type': contentType } })
+
+	let body: string
+	if (bodyInit instanceof CodedError) {
+		const { errCode, status, message } = bodyInit
+		init.status = status
+		body = useJSON ? JSON.stringify({ errCode, message }) : encodeWateringDataResponseData(bodyInit)
+	} else {
+		body = useJSON ? JSON.stringify(bodyInit) : encodeWateringDataResponseData(bodyInit)
+	}
+
+	return new Response(body, { ...init, headers: { 'Content-Type': contentType } })
 }

@@ -19,6 +19,7 @@ export const enum GeocoderCache {
 }
 
 export const enum TimeZoneLookupService {
+	GeoTZ = 'GeoTZ',
 	OpenWeatherMap = 'OpenWeatherMap',
 	GoogleMaps = 'GoogleMaps',
 }
