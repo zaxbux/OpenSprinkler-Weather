@@ -31,3 +31,5 @@ export class RainDelay extends AbstractAdjustmentMethod {
 		}
 	}
 }
+
+export default RainDelay

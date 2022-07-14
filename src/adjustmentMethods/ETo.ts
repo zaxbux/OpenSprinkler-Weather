@@ -1,5 +1,5 @@
 import { AbstractAdjustmentMethod, AdjustmentMethodResponse } from "./AbstractAdjustmentMethod";
-import { GeoCoordinates, WeatherProviderShortID } from "@/types";
+import { GeoCoordinates } from "@/types";
 import { MissingAdjustmentOptionError } from "@/errors";
 import { calculateETo } from '@/utils/evapotranspiration';
 
@@ -10,8 +10,7 @@ export interface EToScalingAdjustmentOptions {
 	baseETo?: number;
 }
 
-interface RawData {
-	wp: WeatherProviderShortID
+interface IRawData {
 	/** Reference potential evapotranspiration */
 	eto: number
 	/** Solar radiation, kWh/m2/day */
@@ -35,7 +34,7 @@ interface RawData {
  * potential ETₒ to the baseline potential ETₒ that the watering program was designed for.
  */
 export class ETo extends AbstractAdjustmentMethod {
-	protected async calculateWateringScale(adjustmentOptions: EToScalingAdjustmentOptions, coordinates: GeoCoordinates): Promise<AdjustmentMethodResponse<RawData>> {
+	protected async calculateWateringScale(adjustmentOptions: EToScalingAdjustmentOptions, coordinates: GeoCoordinates): Promise<AdjustmentMethodResponse<IRawData>> {
 		if (!adjustmentOptions.baseETo) {
 			throw new MissingAdjustmentOptionError()
 		}
@@ -49,8 +48,9 @@ export class ETo extends AbstractAdjustmentMethod {
 		const scale = Math.floor(Math.min(Math.max(0, (eto - etoData.precip) / adjustmentOptions.baseETo * 100), 200))
 
 		return {
-			scale: scale,
-			wateringData: etoData,
+			scale,
+			//timezone: etoData.timezone,
+			etoData: etoData,
 			rawData: {
 				wp: this.weatherProvider.getID(),
 				eto: Math.round(eto * 1000) / 1000,
@@ -65,3 +65,5 @@ export class ETo extends AbstractAdjustmentMethod {
 		}
 	}
 }
+
+export default ETo

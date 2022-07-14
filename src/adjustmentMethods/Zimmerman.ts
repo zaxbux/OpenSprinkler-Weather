@@ -95,7 +95,10 @@ export class Zimmerman extends AbstractAdjustmentMethod<ZimmermanAdjustmentOptio
 				temp: wateringData.temp,
 				humidity: wateringData.humidity,
 				raining: wateringData.raining,
+				precip: wateringData.precip,
 			},
 		}
 	}
 }
+
+export default Zimmerman

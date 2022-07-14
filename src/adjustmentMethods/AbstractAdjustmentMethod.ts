@@ -1,6 +1,5 @@
-import { GeoCoordinates, WateringData, WeatherProviderShortID } from "@/types";
-import { AbstractWeatherProvider } from '@/weatherProviders';
-import { AdjustmentMethodWateringData } from '.';
+import { GeoCoordinates, WeatherProviderShortID, WateringData } from "@/types";
+import { AbstractWeatherProvider, EToData, WateringData as WeatherWateringData } from '@/weatherProviders';
 import { WateringRestrictions } from './WateringRestrictions';
 
 export interface AdjustmentMethodOptions extends Record<string, any> {}
@@ -40,14 +39,18 @@ export abstract class AbstractAdjustmentMethod<T = AdjustmentMethodOptions> {
 
 	protected async applyRestrictions(coordinates: GeoCoordinates, adjustmentMethodResponse: AdjustmentMethodResponse): Promise<AdjustmentMethodResponse> {
 		if (this.wateringRestrictions.checkRestrictions) {
-			let wateringData = adjustmentMethodResponse.wateringData;
+			let wateringData = adjustmentMethodResponse.wateringData
 			// Fetch the watering data if the AdjustmentMethod didn't fetch it and restrictions are being checked.
 			if (!wateringData) {
-				wateringData = (await this.weatherProvider.getWateringData({ coordinates }));
+				wateringData = (await this.weatherProvider.getWateringData({ coordinates }))
+			}
+
+			const parameters = {
+				precip: wateringData.precip || adjustmentMethodResponse.etoData?.precip
 			}
 
 			// Check for any user-set restrictions and change the scale to 0 if the criteria is met
-			if (this.wateringRestrictions.checkWeatherRestriction(wateringData)) {
+			if (this.wateringRestrictions.checkWeatherRestriction(parameters)) {
 				adjustmentMethodResponse.scale = 0;
 			}
 		}
@@ -56,34 +59,13 @@ export abstract class AbstractAdjustmentMethod<T = AdjustmentMethodOptions> {
 	}
 }
 
-// export interface AdjustmentMethodResponse {
-// 	/**
-// 	 * The percentage that should be used to scale the watering level. This should be an integer between 0-200 (inclusive),
-// 	 * or undefined if the watering level should not be changed.
-// 	 */
-// 	scale: number | undefined;
-// 	/**
-// 	 * The raw data that was used to calculate the watering scale. This will be sent directly to the OS controller, so
-// 	 * each field should be formatted in a way that the controller understands and numbers should be rounded
-// 	 * appropriately to remove excessive figures. If no data was used (e.g. an error occurred), this should be undefined.
-// 	 */
-// 	rawData?: Record<string, any>;
-// 	/**
-// 	 * How long watering should be delayed for (in hours) due to rain, or undefined if watering should not be delayed
-// 	 * for a specific amount of time (either it should be delayed indefinitely or it should not be delayed at all). This
-// 	 * property will not stop watering on its own, and the `scale` property should be set to 0 to actually prevent
-// 	 * watering.
-// 	 */
-// 	rainDelay?: number;
-// 	/** The data that was used to calculate the watering scale, or undefined if no data was used. */
-// 	wateringData: BaseWateringData | undefined;
-// }
-
 export interface AdjustmentMethodResponse<R extends Record<string, any> = Record<string, any>> extends Pick<WateringData, 'timezone' | 'scale' | 'rainDelay' | 'rawData'> {
 	/**
 	 * The data that was used to calculate the watering scale or if no data was used, undefined.
 	 */
-	wateringData?: AdjustmentMethodWateringData
+	wateringData?: Pick<WeatherWateringData, 'temp' | 'humidity' | 'precip' | 'raining'>
+
+	etoData?: EToData
 
 	rawData: R & {
 		wp: WeatherProviderShortID | 'Manual'
